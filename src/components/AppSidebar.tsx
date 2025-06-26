@@ -1,5 +1,5 @@
 
-import { Bot, Brain, Eye, HelpCircle, LayoutDashboard, Settings, Zap } from "lucide-react";
+import { Bot, Brain, Eye, HelpCircle, LayoutDashboard, Settings, Zap, CheckSquare } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -27,6 +27,11 @@ const navigationItems = [
     title: "Spy Tools",
     key: "spy",
     icon: Eye,
+  },
+  {
+    title: "MVP Checklist",
+    key: "checklist",
+    icon: CheckSquare,
   },
   {
     title: "Settings",

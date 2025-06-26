@@ -1,10 +1,10 @@
-
 import React, { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import Dashboard from "./Dashboard";
 import AgentLibrary from "./AgentLibrary";
 import SpyTools from "./SpyTools";
+import MVPChecklist from "./MVPChecklist";
 import OnboardingWalkthrough from "@/components/OnboardingWalkthrough";
 
 const Index = () => {
@@ -27,6 +27,8 @@ const Index = () => {
         return <AgentLibrary />;
       case "spy":
         return <SpyTools />;
+      case "checklist":
+        return <MVPChecklist />;
       case "settings":
         return (
           <div className="p-6">
