@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Bot, Send, Wand2, Download, Copy, Sparkles, MessageSquare, User, AlertCircle } from 'lucide-react';
+import { Bot, Send, Wand2, Download, Copy, Sparkles, MessageSquare, User, AlertCircle, Zap } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface Message {
