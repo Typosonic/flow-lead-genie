@@ -1,23 +1,25 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, Circle, AlertTriangle, Clock, ExternalLink } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { CheckCircle2, Circle, Clock, AlertTriangle, ExternalLink, Users, Brain, Zap } from "lucide-react";
+
+type ChecklistStatus = "todo" | "in-progress" | "done" | "critical";
 
 interface ChecklistItem {
   id: string;
   title: string;
   description: string;
-  status: "todo" | "in-progress" | "done" | "critical";
   category: string;
+  status: ChecklistStatus;
   estimatedHours?: number;
   dependencies?: string[];
   resources?: { name: string; url: string }[];
 }
 
 const MVPChecklist = () => {
-  const [checklist, setChecklist] = useState<ChecklistItem[]>([
+  const [items, setItems] = useState<ChecklistItem[]>([
     // Authentication & User Management
     {
       id: "auth-setup",
@@ -344,13 +346,27 @@ const MVPChecklist = () => {
     }
   ]);
 
-  const toggleStatus = (id: string) => {
-    setChecklist(prev => prev.map(item => {
-      if (item.id === id) {
-        const statusOrder = ["todo", "in-progress", "done"];
-        const currentIndex = statusOrder.indexOf(item.status);
-        const nextStatus = statusOrder[(currentIndex + 1) % statusOrder.length];
-        return { ...item, status: nextStatus };
+  const toggleItemStatus = (itemId: string) => {
+    setItems(prev => prev.map(item => {
+      if (item.id === itemId) {
+        let newStatus: ChecklistStatus;
+        switch (item.status) {
+          case "todo":
+            newStatus = "in-progress";
+            break;
+          case "in-progress":
+            newStatus = "done";
+            break;
+          case "done":
+            newStatus = "todo";
+            break;
+          case "critical":
+            newStatus = "in-progress";
+            break;
+          default:
+            newStatus = "todo";
+        }
+        return { ...item, status: newStatus };
       }
       return item;
     }));
@@ -384,11 +400,11 @@ const MVPChecklist = () => {
     );
   };
 
-  const categories = [...new Set(checklist.map(item => item.category))];
-  const totalItems = checklist.length;
-  const completedItems = checklist.filter(item => item.status === "done").length;
-  const criticalItems = checklist.filter(item => item.status === "critical").length;
-  const totalHours = checklist.reduce((sum, item) => sum + (item.estimatedHours || 0), 0);
+  const categories = [...new Set(items.map(item => item.category))];
+  const totalItems = items.length;
+  const completedItems = items.filter(item => item.status === "done").length;
+  const criticalItems = items.filter(item => item.status === "critical").length;
+  const totalHours = items.reduce((sum, item) => sum + (item.estimatedHours || 0), 0);
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -444,7 +460,7 @@ const MVPChecklist = () => {
       </div>
 
       {categories.map(category => {
-        const categoryItems = checklist.filter(item => item.category === category);
+        const categoryItems = items.filter(item => item.category === category);
         const categoryCompleted = categoryItems.filter(item => item.status === "done").length;
         
         return (
@@ -466,7 +482,7 @@ const MVPChecklist = () => {
                   <div key={item.id} className="border rounded-lg p-4 hover:bg-muted/20 transition-colors">
                     <div className="flex items-start gap-3">
                       <button
-                        onClick={() => toggleStatus(item.id)}
+                        onClick={() => toggleItemStatus(item.id)}
                         className="mt-1 hover:scale-110 transition-transform"
                       >
                         {getStatusIcon(item.status)}

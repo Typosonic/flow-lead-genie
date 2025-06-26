@@ -1,5 +1,4 @@
-
-import { Bot, Brain, Eye, HelpCircle, LayoutDashboard, Settings, Zap, CheckSquare } from "lucide-react";
+import { Bot, Brain, Eye, HelpCircle, LayoutDashboard, Settings, Zap, CheckSquare, Wand2 } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -22,6 +21,11 @@ const navigationItems = [
     title: "Agent Library",
     key: "agents",
     icon: Bot,
+  },
+  {
+    title: "Agent Builder",
+    key: "builder",
+    icon: Wand2,
   },
   {
     title: "Spy Tools",

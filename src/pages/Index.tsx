@@ -1,8 +1,10 @@
+
 import React, { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import Dashboard from "./Dashboard";
 import AgentLibrary from "./AgentLibrary";
+import AgentBuilder from "./AgentBuilder";
 import SpyTools from "./SpyTools";
 import MVPChecklist from "./MVPChecklist";
 import OnboardingWalkthrough from "@/components/OnboardingWalkthrough";
@@ -25,6 +27,8 @@ const Index = () => {
     switch (currentPage) {
       case "agents":
         return <AgentLibrary />;
+      case "builder":
+        return <AgentBuilder />;
       case "spy":
         return <SpyTools />;
       case "checklist":
