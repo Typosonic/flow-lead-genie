@@ -1,6 +1,5 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.2'
-import { unzip } from 'https://deno.land/x/zip@v1.2.5/mod.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -17,6 +16,50 @@ interface N8nWorkflow {
   meta?: any;
   pinData?: any;
   versionId?: string;
+}
+
+// Simple ZIP file parser for extracting JSON files
+async function extractJsonFiles(zipData: Uint8Array): Promise<Record<string, any>> {
+  const decoder = new TextDecoder();
+  const files: Record<string, any> = {};
+  
+  try {
+    // Look for JSON files in the ZIP data
+    // This is a simplified approach - we'll look for JSON patterns in the data
+    const zipString = decoder.decode(zipData);
+    
+    // Split by common ZIP file separators and look for JSON content
+    const chunks = zipString.split('\x00').filter(chunk => chunk.length > 10);
+    
+    for (let i = 0; i < chunks.length; i++) {
+      const chunk = chunks[i];
+      
+      // Look for JSON patterns
+      const jsonStart = chunk.indexOf('{');
+      const jsonEnd = chunk.lastIndexOf('}');
+      
+      if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+        try {
+          const jsonContent = chunk.substring(jsonStart, jsonEnd + 1);
+          const parsed = JSON.parse(jsonContent);
+          
+          // Check if it looks like an n8n workflow
+          if (parsed.nodes && Array.isArray(parsed.nodes)) {
+            const filename = `workflow_${i}.json`;
+            files[filename] = new TextEncoder().encode(jsonContent);
+          }
+        } catch (e) {
+          // Not valid JSON, continue
+          continue;
+        }
+      }
+    }
+    
+    return files;
+  } catch (error) {
+    console.error('Error extracting files:', error);
+    throw new Error('Failed to extract ZIP contents');
+  }
 }
 
 Deno.serve(async (req) => {
@@ -77,15 +120,15 @@ Deno.serve(async (req) => {
 
     console.log('File downloaded successfully, extracting...');
 
-    // Convert blob to Uint8Array for unzip
+    // Convert blob to Uint8Array for extraction
     const arrayBuffer = await fileData.arrayBuffer();
     const uint8Array = new Uint8Array(arrayBuffer);
 
     let extractedFiles: any = {};
     try {
-      extractedFiles = await unzip(uint8Array);
-    } catch (unzipError) {
-      console.error('Failed to unzip file:', unzipError);
+      extractedFiles = await extractJsonFiles(uint8Array);
+    } catch (extractError) {
+      console.error('Failed to extract file:', extractError);
       await supabaseClient
         .from('agent_packages')
         .update({ status: 'failed' })
