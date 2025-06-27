@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { Upload, File, X, Plus, CheckCircle, Folder } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -317,7 +318,7 @@ const N8nWorkflowUpload = () => {
             className="hidden"
             id="workflow-upload"
             multiple
-            webkitdirectory=""
+            {...({ webkitdirectory: "" } as any)}
           />
           <div className="flex gap-2 justify-center">
             <label htmlFor="workflow-upload">
