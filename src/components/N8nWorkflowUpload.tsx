@@ -1,6 +1,5 @@
-
 import { useState, useCallback } from 'react';
-import { Upload, File, X, Plus, CheckCircle } from 'lucide-react';
+import { Upload, File, X, Plus, CheckCircle, Folder } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +11,8 @@ interface WorkflowFile {
   status: 'pending' | 'processing' | 'completed' | 'error';
   name?: string;
   nodeCount?: number;
+  category?: string;
+  folderName?: string;
 }
 
 const N8nWorkflowUpload = () => {
@@ -34,10 +35,56 @@ const N8nWorkflowUpload = () => {
     e.stopPropagation();
     setDragActive(false);
     
-    if (e.dataTransfer.files) {
+    if (e.dataTransfer.items) {
+      handleDataTransferItems(e.dataTransfer.items);
+    } else if (e.dataTransfer.files) {
       handleFiles(Array.from(e.dataTransfer.files));
     }
   }, []);
+
+  const handleDataTransferItems = async (items: DataTransferItemList) => {
+    const files: WorkflowFile[] = [];
+    
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.kind === 'file') {
+        const entry = item.webkitGetAsEntry();
+        if (entry) {
+          await processEntry(entry, files);
+        }
+      }
+    }
+    
+    setSelectedFiles(prev => [...prev, ...files]);
+  };
+
+  const processEntry = async (entry: any, files: WorkflowFile[], folderName = ''): Promise<void> => {
+    if (entry.isFile) {
+      const file = await new Promise<File>((resolve) => {
+        entry.file((file: File) => resolve(file));
+      });
+      
+      if (file.type === 'application/json' || file.name.endsWith('.json')) {
+        const category = folderName || 'Other';
+        files.push({
+          file,
+          id: Math.random().toString(36).substr(2, 9),
+          status: 'pending',
+          folderName: folderName || undefined,
+          category: formatCategoryName(category)
+        });
+      }
+    } else if (entry.isDirectory) {
+      const reader = entry.createReader();
+      const entries = await new Promise<any[]>((resolve) => {
+        reader.readEntries((entries: any[]) => resolve(entries));
+      });
+      
+      for (const childEntry of entries) {
+        await processEntry(childEntry, files, entry.name);
+      }
+    }
+  };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -54,9 +101,29 @@ const N8nWorkflowUpload = () => {
       file,
       id: Math.random().toString(36).substr(2, 9),
       status: 'pending' as const,
+      category: 'Other'
     }));
 
     setSelectedFiles(prev => [...prev, ...newWorkflowFiles]);
+  };
+
+  const formatCategoryName = (folderName: string): string => {
+    // Convert folder names to proper category names
+    const categoryMap: Record<string, string> = {
+      'sdr': 'SDR',
+      'chatbot': 'Chatbot', 
+      'chatbots': 'Chatbot',
+      'voice': 'Voice',
+      'content': 'Content',
+      'ads': 'Ads',
+      'advertising': 'Ads',
+      'real-estate': 'Real Estate',
+      'realestate': 'Real Estate',
+      'real_estate': 'Real Estate'
+    };
+
+    const normalizedName = folderName.toLowerCase().replace(/[-_\s]/g, '');
+    return categoryMap[normalizedName] || folderName.charAt(0).toUpperCase() + folderName.slice(1);
   };
 
   const removeFile = (id: string) => {
@@ -95,18 +162,19 @@ const N8nWorkflowUpload = () => {
           } : f)
         );
 
-        // Create agent template
+        // Create agent template using folder-based category
         await createTemplates.mutateAsync({
           name: workflowName,
-          description: `n8n workflow: ${workflowName}. Contains ${workflowData.nodes.length} nodes.`,
-          category: determineCategory(workflowName, workflowData),
+          description: `n8n workflow: ${workflowName}. Contains ${workflowData.nodes.length} nodes.${workflowFile.folderName ? ` From ${workflowFile.folderName} collection.` : ''}`,
+          category: workflowFile.category || determineCategory(workflowName, workflowData),
           configuration: {
             type: 'n8n-workflow',
             workflow_data: workflowData,
             node_count: workflowData.nodes.length,
-            source: 'direct-upload'
+            source: 'folder-upload',
+            folder_name: workflowFile.folderName
           },
-          prompt_template: generatePromptFromWorkflow(workflowData),
+          prompt_template: generatePromptFromWorkflow(workflowData, workflowFile.category),
           is_public: true
         });
 
@@ -151,7 +219,7 @@ const N8nWorkflowUpload = () => {
     return 'Other';
   };
 
-  const generatePromptFromWorkflow = (workflow: any): string => {
+  const generatePromptFromWorkflow = (workflow: any, category?: string): string => {
     const nodeCount = workflow.nodes?.length || 0;
     const hasWebhook = workflow.nodes?.some((node: any) => 
       node.type?.toLowerCase().includes('webhook')
@@ -161,6 +229,10 @@ const N8nWorkflowUpload = () => {
     ) || false;
     
     let prompt = `You are an AI agent powered by the n8n workflow "${workflow.name || 'Untitled Workflow'}". `;
+    
+    if (category) {
+      prompt += `You specialize in ${category.toLowerCase()} tasks and automation. `;
+    }
     
     if (hasWebhook) {
       prompt += 'You can receive webhooks and process incoming data automatically. ';
@@ -199,6 +271,12 @@ const N8nWorkflowUpload = () => {
 
   const canProcess = selectedFiles.some(f => f.status === 'pending');
   const hasCompleted = selectedFiles.some(f => f.status === 'completed');
+  const groupedFiles = selectedFiles.reduce((groups, file) => {
+    const key = file.folderName || 'Individual Files';
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(file);
+    return groups;
+  }, {} as Record<string, WorkflowFile[]>);
 
   return (
     <Card className="glass-morphism border-border/40">
@@ -208,7 +286,7 @@ const N8nWorkflowUpload = () => {
           Upload n8n Workflows
         </CardTitle>
         <CardDescription>
-          Upload individual n8n workflow JSON files to create agent templates
+          Upload individual JSON files or drag entire folders to automatically categorize workflows by folder name
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -224,9 +302,14 @@ const N8nWorkflowUpload = () => {
           onDragOver={handleDrag}
           onDrop={handleDrop}
         >
-          <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
-          <p className="font-medium mb-2">Drop n8n workflow files here</p>
-          <p className="text-sm text-muted-foreground mb-3">or click to browse (.json files only)</p>
+          <div className="flex items-center justify-center gap-4 mb-3">
+            <Upload className="h-8 w-8 text-muted-foreground" />
+            <Folder className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <p className="font-medium mb-2">Drop folders or JSON files here</p>
+          <p className="text-sm text-muted-foreground mb-3">
+            Folders will be used as categories • Individual files go to "Other" category
+          </p>
           <input
             type="file"
             accept=".json,application/json"
@@ -234,20 +317,39 @@ const N8nWorkflowUpload = () => {
             className="hidden"
             id="workflow-upload"
             multiple
+            webkitdirectory=""
           />
-          <label htmlFor="workflow-upload">
-            <Button variant="outline" className="cursor-pointer" asChild>
-              <span>
-                <Plus className="h-4 w-4 mr-2" />
-                Select Files
-              </span>
-            </Button>
-          </label>
+          <div className="flex gap-2 justify-center">
+            <label htmlFor="workflow-upload">
+              <Button variant="outline" className="cursor-pointer" asChild>
+                <span>
+                  <Folder className="h-4 w-4 mr-2" />
+                  Select Folder
+                </span>
+              </Button>
+            </label>
+            <input
+              type="file"
+              accept=".json,application/json"
+              onChange={handleFileSelect}
+              className="hidden"
+              id="file-upload"
+              multiple
+            />
+            <label htmlFor="file-upload">
+              <Button variant="outline" className="cursor-pointer" asChild>
+                <span>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Select Files
+                </span>
+              </Button>
+            </label>
+          </div>
         </div>
 
         {/* File List */}
         {selectedFiles.length > 0 && (
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h4 className="font-medium">Selected Workflows ({selectedFiles.length})</h4>
               {canProcess && (
@@ -261,41 +363,58 @@ const N8nWorkflowUpload = () => {
               )}
             </div>
 
-            {selectedFiles.map((workflowFile) => (
-              <div key={workflowFile.id} className="flex items-center justify-between p-3 bg-muted/20 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <File className="h-6 w-6 text-brand-500" />
-                  <div>
-                    <p className="font-medium">
-                      {workflowFile.name || workflowFile.file.name}
-                    </p>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <span>{formatFileSize(workflowFile.file.size)}</span>
-                      {workflowFile.nodeCount && (
-                        <>
-                          <span>•</span>
-                          <span>{workflowFile.nodeCount} nodes</span>
-                        </>
+            {Object.entries(groupedFiles).map(([groupName, files]) => (
+              <div key={groupName} className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Folder className="h-4 w-4 text-brand-500" />
+                  <h5 className="font-medium text-sm">{groupName}</h5>
+                  <Badge variant="outline" className="text-xs">
+                    {files.length} files
+                  </Badge>
+                  {files[0]?.category && (
+                    <Badge className="text-xs bg-brand-500/20 text-brand-400">
+                      → {files[0].category}
+                    </Badge>
+                  )}
+                </div>
+                
+                {files.map((workflowFile) => (
+                  <div key={workflowFile.id} className="flex items-center justify-between p-3 bg-muted/20 rounded-lg ml-6">
+                    <div className="flex items-center gap-3">
+                      <File className="h-5 w-5 text-brand-500" />
+                      <div>
+                        <p className="font-medium text-sm">
+                          {workflowFile.name || workflowFile.file.name}
+                        </p>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <span>{formatFileSize(workflowFile.file.size)}</span>
+                          {workflowFile.nodeCount && (
+                            <>
+                              <span>•</span>
+                              <span>{workflowFile.nodeCount} nodes</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge className={getStatusColor(workflowFile.status)}>
+                        {workflowFile.status === 'completed' && <CheckCircle className="h-3 w-3 mr-1" />}
+                        {workflowFile.status}
+                      </Badge>
+                      {workflowFile.status === 'pending' && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeFile(workflowFile.id)}
+                          className="h-6 w-6 p-0"
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
                       )}
                     </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge className={getStatusColor(workflowFile.status)}>
-                    {workflowFile.status === 'completed' && <CheckCircle className="h-3 w-3 mr-1" />}
-                    {workflowFile.status}
-                  </Badge>
-                  {workflowFile.status === 'pending' && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeFile(workflowFile.id)}
-                      className="h-6 w-6 p-0"
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  )}
-                </div>
+                ))}
               </div>
             ))}
           </div>
