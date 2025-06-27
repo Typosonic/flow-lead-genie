@@ -2,6 +2,9 @@
 import React, { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
+import { Button } from "@/components/ui/button";
+import { LogOut, User } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 import Dashboard from "./Dashboard";
 import AgentLibrary from "./AgentLibrary";
 import AgentBuilder from "./AgentBuilder";
@@ -13,6 +16,7 @@ const Index = () => {
   const [currentPage, setCurrentPage] = useState("dashboard");
   const [showOnboarding, setShowOnboarding] = useState(true);
   const [isOnboardingComplete, setIsOnboardingComplete] = useState(false);
+  const { user, signOut } = useAuth();
 
   const handleOnboardingComplete = () => {
     setShowOnboarding(false);
@@ -64,8 +68,20 @@ const Index = () => {
           <main className="flex-1 flex flex-col">
             <div className="border-b border-border/40 bg-background/50 backdrop-blur-xl p-4 flex items-center justify-between">
               <SidebarTrigger className="hover:bg-muted/20 transition-colors" />
-              <div className="text-sm text-muted-foreground">
-                Welcome to Agent-flow AI Automation Platform
+              <div className="flex items-center gap-4">
+                <div className="text-sm text-muted-foreground flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  {user?.email}
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={signOut}
+                  className="flex items-center gap-2"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Sign Out
+                </Button>
               </div>
             </div>
             <div className="flex-1 overflow-auto">
