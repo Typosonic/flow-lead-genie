@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { Upload, File, X, Plus, CheckCircle, Folder } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -109,7 +108,7 @@ const N8nWorkflowUpload = () => {
   };
 
   const formatCategoryName = (folderName: string): string => {
-    // Convert folder names to proper category names
+    // Convert folder names to proper category names with better formatting
     const categoryMap: Record<string, string> = {
       'sdr': 'SDR',
       'chatbot': 'Chatbot', 
@@ -120,11 +119,28 @@ const N8nWorkflowUpload = () => {
       'advertising': 'Ads',
       'real-estate': 'Real Estate',
       'realestate': 'Real Estate',
-      'real_estate': 'Real Estate'
+      'real_estate': 'Real Estate',
+      'government_ngo': 'Government & NGO',
+      'creative_content': 'Creative & Content',
+      'hr': 'Human Resources',
+      'iot': 'IoT & Smart Systems',
+      'legal': 'Legal Tech',
+      'legaltech': 'Legal Tech',
+      'legal_tech': 'Legal Tech'
     };
 
     const normalizedName = folderName.toLowerCase().replace(/[-_\s]/g, '');
-    return categoryMap[normalizedName] || folderName.charAt(0).toUpperCase() + folderName.slice(1);
+    
+    // If we have a direct mapping, use it
+    if (categoryMap[normalizedName]) {
+      return categoryMap[normalizedName];
+    }
+    
+    // Otherwise, format the folder name nicely
+    return folderName
+      .split(/[-_\s]/)
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
   };
 
   const removeFile = (id: string) => {
@@ -287,7 +303,7 @@ const N8nWorkflowUpload = () => {
           Upload n8n Workflows
         </CardTitle>
         <CardDescription>
-          Upload individual JSON files or drag entire folders to automatically categorize workflows by folder name
+          Upload folders to automatically create organized template sections, or upload individual JSON files
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -309,7 +325,7 @@ const N8nWorkflowUpload = () => {
           </div>
           <p className="font-medium mb-2">Drop folders or JSON files here</p>
           <p className="text-sm text-muted-foreground mb-3">
-            Folders will be used as categories • Individual files go to "Other" category
+            Folders create organized template sections • Individual files go to "Other" category
           </p>
           <input
             type="file"
@@ -424,7 +440,7 @@ const N8nWorkflowUpload = () => {
         {hasCompleted && (
           <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
             <p className="text-sm text-green-400">
-              ✅ Templates created successfully! Check the Template Library to see your new agents.
+              ✅ Templates created successfully! Check the Template Library to see your new organized sections.
             </p>
           </div>
         )}

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Bot, MessageSquare, Phone, Search, Zap, Filter, Play, Upload } from "lucide-react";
+import { Bot, MessageSquare, Phone, Search, Zap, Filter, Play, Upload, Folder } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -29,8 +29,6 @@ const AgentLibrary = () => {
       refetchTemplates();
     }
   }, [packages, refetchTemplates]);
-
-  const categories = ["All", "SDR", "Chatbot", "Voice", "Content", "Ads", "Real Estate"];
 
   // Static template agents for demonstration
   const staticTemplates = [
@@ -112,26 +110,40 @@ const AgentLibrary = () => {
   const allTemplates = [
     ...staticTemplates,
     ...(templates || []).map(t => {
-      // Properly type the configuration object
       const config = t.configuration as Record<string, any> | null;
-      const isUserUpload = config?.source === 'user-upload';
+      const isUserUpload = config?.source === 'folder-upload';
       
       return {
         id: t.id,
         name: t.name,
         description: t.description,
         category: t.category || "Other",
-        icon: isUserUpload ? "📦" : "🤖",
+        icon: isUserUpload ? "📁" : "🤖",
         features: isUserUpload 
-          ? [`${config?.node_count || 0} n8n nodes`, "User Created"]
+          ? [`${config?.node_count || 0} n8n nodes`, config?.folder_name ? `From ${config.folder_name}` : "User Created"]
           : ["Custom Template"],
         deployment: "2 min",
         popularity: t.usage_count > 10 ? "Popular" : isUserUpload ? "Community" : null,
         configuration: t.configuration,
-        prompt_template: t.prompt_template
+        prompt_template: t.prompt_template,
+        folderName: config?.folder_name
       };
     })
   ];
+
+  // Get all unique categories including uploaded ones
+  const allCategories = Array.from(new Set([
+    "All",
+    ...allTemplates.map(t => t.category).filter(Boolean)
+  ])).sort();
+
+  // Group templates by category for organized sections
+  const templatesByCategory = allTemplates.reduce((groups, template) => {
+    const category = template.category || "Other";
+    if (!groups[category]) groups[category] = [];
+    groups[category].push(template);
+    return groups;
+  }, {} as Record<string, typeof allTemplates>);
 
   const filteredTemplates = allTemplates.filter(template => {
     const matchesCategory = selectedCategory === "All" || template.category === selectedCategory;
@@ -146,10 +158,32 @@ const AgentLibrary = () => {
       "Chatbot": "bg-green-500/20 text-green-400 border-green-500/30",
       "Voice": "bg-purple-500/20 text-purple-400 border-purple-500/30",
       "Content": "bg-pink-500/20 text-pink-400 border-pink-500/30",
+      "Creative & Content": "bg-pink-500/20 text-pink-400 border-pink-500/30",
       "Ads": "bg-orange-500/20 text-orange-400 border-orange-500/30",
-      "Real Estate": "bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
+      "Real Estate": "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
+      "Government & NGO": "bg-indigo-500/20 text-indigo-400 border-indigo-500/30",
+      "Human Resources": "bg-teal-500/20 text-teal-400 border-teal-500/30",
+      "IoT & Smart Systems": "bg-cyan-500/20 text-cyan-400 border-cyan-500/30",
+      "Legal Tech": "bg-slate-500/20 text-slate-400 border-slate-500/30"
     };
     return colors[category as keyof typeof colors] || "bg-gray-500/20 text-gray-400 border-gray-500/30";
+  };
+
+  const getCategoryIcon = (category: string) => {
+    const icons = {
+      "Government & NGO": "🏛️",
+      "Creative & Content": "🎨",
+      "Human Resources": "👥",
+      "IoT & Smart Systems": "🔗",
+      "Legal Tech": "⚖️",
+      "SDR": "📊",
+      "Chatbot": "💬",
+      "Voice": "🎙️",
+      "Content": "📸",
+      "Ads": "🎯",
+      "Real Estate": "🏠"
+    };
+    return icons[category as keyof typeof icons] || "🤖";
   };
 
   const handleDeploy = (template: any) => {
@@ -201,13 +235,13 @@ const AgentLibrary = () => {
         <TabsContent value="templates" className="space-y-6">
           <div>
             <h2 className="text-2xl font-bold mb-2">Template Library</h2>
-            <p className="text-muted-foreground">Ready-to-deploy agent templates from the community and our library</p>
+            <p className="text-muted-foreground">Ready-to-deploy agent templates organized by category</p>
           </div>
 
           {/* Category Filter */}
           <div className="flex items-center gap-2 overflow-x-auto">
             <Filter className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-            {categories.map((category) => (
+            {allCategories.map((category) => (
               <Button
                 key={category}
                 variant={selectedCategory === category ? "default" : "outline"}
@@ -219,78 +253,160 @@ const AgentLibrary = () => {
                     : 'border-border/40 hover:bg-muted/20'
                 }`}
               >
-                {category}
+                {category !== "All" && getCategoryIcon(category)} {category}
               </Button>
             ))}
           </div>
 
-          {/* Templates Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredTemplates.map((template) => (
-              <Card key={template.id} className="glass-morphism border-border/40 card-hover group">
-                <CardHeader className="pb-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="text-2xl">{template.icon}</div>
-                      <div>
-                        <CardTitle className="text-lg">{template.name}</CardTitle>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Badge className={getCategoryColor(template.category)}>
-                            {template.category}
-                          </Badge>
-                          {template.popularity && (
-                            <Badge variant="outline" className="border-brand-500/30 text-brand-400">
-                              {template.popularity}
+          {/* Organized Template Sections */}
+          {selectedCategory === "All" ? (
+            <div className="space-y-8">
+              {Object.entries(templatesByCategory).map(([category, categoryTemplates]) => (
+                <div key={category} className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="text-2xl">{getCategoryIcon(category)}</div>
+                    <div>
+                      <h3 className="text-xl font-semibold">{category}</h3>
+                      <p className="text-sm text-muted-foreground">{categoryTemplates.length} templates available</p>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {categoryTemplates.map((template) => (
+                      <Card key={template.id} className="glass-morphism border-border/40 card-hover group">
+                        <CardHeader className="pb-4">
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className="text-2xl">{template.icon}</div>
+                              <div>
+                                <CardTitle className="text-lg">{template.name}</CardTitle>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <Badge className={getCategoryColor(template.category)}>
+                                    {template.category}
+                                  </Badge>
+                                  {template.popularity && (
+                                    <Badge variant="outline" className="border-brand-500/30 text-brand-400">
+                                      {template.popularity}
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <CardDescription className="text-sm">{template.description}</CardDescription>
+                        </CardHeader>
+                        
+                        <CardContent className="space-y-4">
+                          {/* Features */}
+                          <div>
+                            <p className="text-sm font-medium mb-2">Key Features:</p>
+                            <div className="flex flex-wrap gap-1">
+                              {template.features.map((feature, index) => (
+                                <Badge 
+                                  key={index} 
+                                  variant="secondary" 
+                                  className="text-xs bg-muted/30 border-border/40"
+                                >
+                                  {feature}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Deployment Time */}
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">Deployment time:</span>
+                            <span className="font-medium">{template.deployment}</span>
+                          </div>
+
+                          {/* Actions */}
+                          <div className="flex gap-2">
+                            <Button 
+                              className="flex-1 btn-gradient rounded-xl group-hover:scale-[1.02] transition-all duration-200"
+                              onClick={() => handleDeploy(template)}
+                              disabled={deployAgent.isPending}
+                            >
+                              <Zap className="h-4 w-4 mr-2" />
+                              {deployAgent.isPending ? 'Deploying...' : 'Deploy'}
+                            </Button>
+                            <Button variant="outline" size="icon" className="rounded-xl border-border/40">
+                              <Play className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            // Single category view
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredTemplates.map((template) => (
+                <Card key={template.id} className="glass-morphism border-border/40 card-hover group">
+                  {/* ... keep existing code (template card content) */}
+                  <CardHeader className="pb-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="text-2xl">{template.icon}</div>
+                        <div>
+                          <CardTitle className="text-lg">{template.name}</CardTitle>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge className={getCategoryColor(template.category)}>
+                              {template.category}
                             </Badge>
-                          )}
+                            {template.popularity && (
+                              <Badge variant="outline" className="border-brand-500/30 text-brand-400">
+                                {template.popularity}
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                  <CardDescription className="text-sm">{template.description}</CardDescription>
-                </CardHeader>
-                
-                <CardContent className="space-y-4">
-                  {/* Features */}
-                  <div>
-                    <p className="text-sm font-medium mb-2">Key Features:</p>
-                    <div className="flex flex-wrap gap-1">
-                      {template.features.map((feature, index) => (
-                        <Badge 
-                          key={index} 
-                          variant="secondary" 
-                          className="text-xs bg-muted/30 border-border/40"
-                        >
-                          {feature}
-                        </Badge>
-                      ))}
+                    <CardDescription className="text-sm">{template.description}</CardDescription>
+                  </CardHeader>
+                  
+                  <CardContent className="space-y-4">
+                    <div>
+                      <p className="text-sm font-medium mb-2">Key Features:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {template.features.map((feature, index) => (
+                          <Badge 
+                            key={index} 
+                            variant="secondary" 
+                            className="text-xs bg-muted/30 border-border/40"
+                          >
+                            {feature}
+                          </Badge>
+                        ))}
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Deployment Time */}
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Deployment time:</span>
-                    <span className="font-medium">{template.deployment}</span>
-                  </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Deployment time:</span>
+                      <span className="font-medium">{template.deployment}</span>
+                    </div>
 
-                  {/* Actions */}
-                  <div className="flex gap-2">
-                    <Button 
-                      className="flex-1 btn-gradient rounded-xl group-hover:scale-[1.02] transition-all duration-200"
-                      onClick={() => handleDeploy(template)}
-                      disabled={deployAgent.isPending}
-                    >
-                      <Zap className="h-4 w-4 mr-2" />
-                      {deployAgent.isPending ? 'Deploying...' : 'Deploy'}
-                    </Button>
-                    <Button variant="outline" size="icon" className="rounded-xl border-border/40">
-                      <Play className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                    <div className="flex gap-2">
+                      <Button 
+                        className="flex-1 btn-gradient rounded-xl group-hover:scale-[1.02] transition-all duration-200"
+                        onClick={() => handleDeploy(template)}
+                        disabled={deployAgent.isPending}
+                      >
+                        <Zap className="h-4 w-4 mr-2" />
+                        {deployAgent.isPending ? 'Deploying...' : 'Deploy'}
+                      </Button>
+                      <Button variant="outline" size="icon" className="rounded-xl border-border/40">
+                        <Play className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
 
           {/* Empty State */}
           {filteredTemplates.length === 0 && !templatesLoading && (
@@ -305,7 +421,7 @@ const AgentLibrary = () => {
         <TabsContent value="workflows" className="space-y-6">
           <div>
             <h2 className="text-2xl font-bold mb-2">Upload n8n Workflows</h2>
-            <p className="text-muted-foreground">Upload individual n8n workflow JSON files to create agent templates instantly</p>
+            <p className="text-muted-foreground">Upload organized folders to create structured template sections in the library</p>
           </div>
 
           <div className="max-w-4xl">
