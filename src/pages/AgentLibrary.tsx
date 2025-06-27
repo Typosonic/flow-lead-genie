@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Bot, MessageSquare, Phone, Search, Zap, Filter, Play, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,6 +13,7 @@ import AgentPackagesList from "@/components/AgentPackagesList";
 import { useAgentTemplates } from "@/hooks/useAgentTemplates";
 import { useDeployAgent } from "@/hooks/useDeployAgent";
 import { useAgentPackages } from "@/hooks/useAgentPackages";
+import N8nWorkflowUpload from "@/components/N8nWorkflowUpload";
 
 const AgentLibrary = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -192,8 +192,9 @@ const AgentLibrary = () => {
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="templates" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="templates" data-value="templates">Template Library</TabsTrigger>
+          <TabsTrigger value="workflows">Upload Workflows</TabsTrigger>
           <TabsTrigger value="packages">Upload Packages</TabsTrigger>
         </TabsList>
 
@@ -299,6 +300,17 @@ const AgentLibrary = () => {
               <p className="text-muted-foreground">Try adjusting your search or filter criteria</p>
             </div>
           )}
+        </TabsContent>
+
+        <TabsContent value="workflows" className="space-y-6">
+          <div>
+            <h2 className="text-2xl font-bold mb-2">Upload n8n Workflows</h2>
+            <p className="text-muted-foreground">Upload individual n8n workflow JSON files to create agent templates instantly</p>
+          </div>
+
+          <div className="max-w-4xl">
+            <N8nWorkflowUpload />
+          </div>
         </TabsContent>
 
         <TabsContent value="packages" className="space-y-6">
