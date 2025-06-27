@@ -27,7 +27,7 @@ export const useDeployAgent = () => {
           description: templateData.description,
           configuration: templateData.configuration || {},
           prompt_template: templateData.prompt_template,
-          status: 'active'
+          status: 'active' as const
         })
         .select()
         .single();
@@ -35,7 +35,7 @@ export const useDeployAgent = () => {
       if (error) throw error;
       
       // Update template usage count if deploying from template
-      if (templateData.id) {
+      if (templateData.id && !templateData.id.startsWith('static-')) {
         await supabase.rpc('increment_template_usage', { template_id: templateData.id });
       }
       

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Bot, Edit, Play, Trash2, Pause } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,7 +14,7 @@ const UserAgentsSection = () => {
   const queryClient = useQueryClient();
 
   const updateAgentStatus = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+    mutationFn: async ({ id, status }: { id: string; status: 'active' | 'paused' | 'draft' | 'archived' }) => {
       const { error } = await supabase
         .from('agents')
         .update({ status })
