@@ -36,11 +36,15 @@ export const useDeployAgent = () => {
       
       // Update template usage count if deploying from template (not static templates)
       if (templateData.id && !templateData.id.startsWith('static-')) {
-        const { error: rpcError } = await supabase.rpc('increment_template_usage', { 
-          template_id: templateData.id 
-        });
-        if (rpcError) {
-          console.warn('Failed to update template usage count:', rpcError);
+        const { error: updateError } = await supabase
+          .from('agent_templates')
+          .update({ 
+            usage_count: supabase.raw('usage_count + 1')
+          })
+          .eq('id', templateData.id);
+        
+        if (updateError) {
+          console.warn('Failed to update template usage count:', updateError);
         }
       }
       
