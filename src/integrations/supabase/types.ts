@@ -274,6 +274,54 @@ export type Database = {
           },
         ]
       }
+      extracted_workflows: {
+        Row: {
+          created_at: string
+          id: string
+          package_id: string
+          status: string | null
+          template_id: string | null
+          updated_at: string
+          workflow_data: Json
+          workflow_name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          package_id: string
+          status?: string | null
+          template_id?: string | null
+          updated_at?: string
+          workflow_data: Json
+          workflow_name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          package_id?: string
+          status?: string | null
+          template_id?: string | null
+          updated_at?: string
+          workflow_data?: Json
+          workflow_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "extracted_workflows_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "agent_packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "extracted_workflows_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "agent_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       integrations: {
         Row: {
           configuration: Json | null

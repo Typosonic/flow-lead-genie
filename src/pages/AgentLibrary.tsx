@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Bot, MessageSquare, Phone, Search, Zap, Filter, Play, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,13 +13,22 @@ import AgentPackageUpload from "@/components/AgentPackageUpload";
 import AgentPackagesList from "@/components/AgentPackagesList";
 import { useAgentTemplates } from "@/hooks/useAgentTemplates";
 import { useDeployAgent } from "@/hooks/useDeployAgent";
+import { useAgentPackages } from "@/hooks/useAgentPackages";
 
 const AgentLibrary = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   
-  const { data: templates, isLoading: templatesLoading } = useAgentTemplates();
+  const { data: templates, isLoading: templatesLoading, refetch: refetchTemplates } = useAgentTemplates();
+  const { data: packages } = useAgentPackages();
   const deployAgent = useDeployAgent();
+
+  // Refresh templates when packages are processed
+  useEffect(() => {
+    if (packages && packages.some(pkg => pkg.status === 'completed')) {
+      refetchTemplates();
+    }
+  }, [packages, refetchTemplates]);
 
   const categories = ["All", "SDR", "Chatbot", "Voice", "Content", "Ads", "Real Estate"];
 
@@ -107,10 +116,12 @@ const AgentLibrary = () => {
       name: t.name,
       description: t.description,
       category: t.category || "Other",
-      icon: "🤖",
-      features: ["Custom Template"],
+      icon: t.configuration?.source === 'user-upload' ? "📦" : "🤖",
+      features: t.configuration?.source === 'user-upload' 
+        ? [`${t.configuration?.node_count || 0} n8n nodes`, "User Created"]
+        : ["Custom Template"],
       deployment: "2 min",
-      popularity: t.usage_count > 10 ? "Popular" : null,
+      popularity: t.usage_count > 10 ? "Popular" : t.configuration?.source === 'user-upload' ? "Community" : null,
       configuration: t.configuration,
       prompt_template: t.prompt_template
     }))
@@ -176,14 +187,14 @@ const AgentLibrary = () => {
       {/* Main Content Tabs */}
       <Tabs defaultValue="templates" className="space-y-6">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="templates">Template Library</TabsTrigger>
+          <TabsTrigger value="templates" data-value="templates">Template Library</TabsTrigger>
           <TabsTrigger value="packages">Upload Packages</TabsTrigger>
         </TabsList>
 
         <TabsContent value="templates" className="space-y-6">
           <div>
             <h2 className="text-2xl font-bold mb-2">Template Library</h2>
-            <p className="text-muted-foreground">Ready-to-deploy agent templates</p>
+            <p className="text-muted-foreground">Ready-to-deploy agent templates from the community and our library</p>
           </div>
 
           {/* Category Filter */}
