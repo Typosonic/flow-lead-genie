@@ -1,19 +1,31 @@
 import { useState, useEffect } from "react";
-import { Bot, MessageSquare, Phone, Search, Zap, Filter, Play, Upload, Folder } from "lucide-react";
+import { Bot, MessageSquare, Phone, Search, Zap, Filter, Play, Upload, Folder, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import CreateAgentDialog from "@/components/CreateAgentDialog";
 import UserAgentsSection from "@/components/UserAgentsSection";
 import AgentPackageUpload from "@/components/AgentPackageUpload";
 import AgentPackagesList from "@/components/AgentPackagesList";
+import N8nWorkflowUpload from "@/components/N8nWorkflowUpload";
 import { useAgentTemplates } from "@/hooks/useAgentTemplates";
 import { useDeployAgent } from "@/hooks/useDeployAgent";
 import { useAgentPackages } from "@/hooks/useAgentPackages";
-import N8nWorkflowUpload from "@/components/N8nWorkflowUpload";
+import { useDeleteAgentTemplate } from "@/hooks/useDeleteAgentTemplate";
 
 const AgentLibrary = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -22,6 +34,7 @@ const AgentLibrary = () => {
   const { data: templates, isLoading: templatesLoading, refetch: refetchTemplates } = useAgentTemplates();
   const { data: packages } = useAgentPackages();
   const deployAgent = useDeployAgent();
+  const deleteTemplate = useDeleteAgentTemplate();
 
   // Refresh templates when packages are processed
   useEffect(() => {
@@ -126,7 +139,8 @@ const AgentLibrary = () => {
         popularity: t.usage_count > 10 ? "Popular" : isUserUpload ? "Community" : null,
         configuration: t.configuration,
         prompt_template: t.prompt_template,
-        folderName: config?.folder_name
+        folderName: config?.folder_name,
+        isUserCreated: !t.id.startsWith('static-')
       };
     })
   ];
@@ -195,6 +209,98 @@ const AgentLibrary = () => {
       prompt_template: template.prompt_template
     });
   };
+
+  const handleDelete = (templateId: string) => {
+    deleteTemplate.mutate(templateId);
+  };
+
+  const renderTemplateCard = (template: any) => (
+    <Card key={template.id} className="glass-morphism border-border/40 card-hover group">
+      <CardHeader className="pb-4">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-3">
+            <div className="text-2xl">{template.icon}</div>
+            <div>
+              <CardTitle className="text-lg">{template.name}</CardTitle>
+              <div className="flex items-center gap-2 mt-1">
+                <Badge className={getCategoryColor(template.category)}>
+                  {template.category}
+                </Badge>
+                {template.popularity && (
+                  <Badge variant="outline" className="border-brand-500/30 text-brand-400">
+                    {template.popularity}
+                  </Badge>
+                )}
+              </div>
+            </div>
+          </div>
+          {template.isUserCreated && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-300 hover:bg-red-500/10">
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Template</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete "{template.name}"? This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => handleDelete(template.id)}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+        </div>
+        <CardDescription className="text-sm">{template.description}</CardDescription>
+      </CardHeader>
+      
+      <CardContent className="space-y-4">
+        <div>
+          <p className="text-sm font-medium mb-2">Key Features:</p>
+          <div className="flex flex-wrap gap-1">
+            {template.features.map((feature, index) => (
+              <Badge 
+                key={index} 
+                variant="secondary" 
+                className="text-xs bg-muted/30 border-border/40"
+              >
+                {feature}
+              </Badge>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-muted-foreground">Deployment time:</span>
+          <span className="font-medium">{template.deployment}</span>
+        </div>
+
+        <div className="flex gap-2">
+          <Button 
+            className="flex-1 btn-gradient rounded-xl group-hover:scale-[1.02] transition-all duration-200"
+            onClick={() => handleDeploy(template)}
+            disabled={deployAgent.isPending}
+          >
+            <Zap className="h-4 w-4 mr-2" />
+            {deployAgent.isPending ? 'Deploying...' : 'Deploy'}
+          </Button>
+          <Button variant="outline" size="icon" className="rounded-xl border-border/40">
+            <Play className="h-4 w-4" />
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
 
   return (
     <div className="p-6 space-y-6">
@@ -272,70 +378,7 @@ const AgentLibrary = () => {
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {categoryTemplates.map((template) => (
-                      <Card key={template.id} className="glass-morphism border-border/40 card-hover group">
-                        <CardHeader className="pb-4">
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-center gap-3">
-                              <div className="text-2xl">{template.icon}</div>
-                              <div>
-                                <CardTitle className="text-lg">{template.name}</CardTitle>
-                                <div className="flex items-center gap-2 mt-1">
-                                  <Badge className={getCategoryColor(template.category)}>
-                                    {template.category}
-                                  </Badge>
-                                  {template.popularity && (
-                                    <Badge variant="outline" className="border-brand-500/30 text-brand-400">
-                                      {template.popularity}
-                                    </Badge>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          <CardDescription className="text-sm">{template.description}</CardDescription>
-                        </CardHeader>
-                        
-                        <CardContent className="space-y-4">
-                          {/* Features */}
-                          <div>
-                            <p className="text-sm font-medium mb-2">Key Features:</p>
-                            <div className="flex flex-wrap gap-1">
-                              {template.features.map((feature, index) => (
-                                <Badge 
-                                  key={index} 
-                                  variant="secondary" 
-                                  className="text-xs bg-muted/30 border-border/40"
-                                >
-                                  {feature}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-
-                          {/* Deployment Time */}
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-muted-foreground">Deployment time:</span>
-                            <span className="font-medium">{template.deployment}</span>
-                          </div>
-
-                          {/* Actions */}
-                          <div className="flex gap-2">
-                            <Button 
-                              className="flex-1 btn-gradient rounded-xl group-hover:scale-[1.02] transition-all duration-200"
-                              onClick={() => handleDeploy(template)}
-                              disabled={deployAgent.isPending}
-                            >
-                              <Zap className="h-4 w-4 mr-2" />
-                              {deployAgent.isPending ? 'Deploying...' : 'Deploy'}
-                            </Button>
-                            <Button variant="outline" size="icon" className="rounded-xl border-border/40">
-                              <Play className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                    {categoryTemplates.map((template) => renderTemplateCard(template))}
                   </div>
                 </div>
               ))}
@@ -343,68 +386,7 @@ const AgentLibrary = () => {
           ) : (
             // Single category view
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredTemplates.map((template) => (
-                <Card key={template.id} className="glass-morphism border-border/40 card-hover group">
-                  {/* ... keep existing code (template card content) */}
-                  <CardHeader className="pb-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="text-2xl">{template.icon}</div>
-                        <div>
-                          <CardTitle className="text-lg">{template.name}</CardTitle>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge className={getCategoryColor(template.category)}>
-                              {template.category}
-                            </Badge>
-                            {template.popularity && (
-                              <Badge variant="outline" className="border-brand-500/30 text-brand-400">
-                                {template.popularity}
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <CardDescription className="text-sm">{template.description}</CardDescription>
-                  </CardHeader>
-                  
-                  <CardContent className="space-y-4">
-                    <div>
-                      <p className="text-sm font-medium mb-2">Key Features:</p>
-                      <div className="flex flex-wrap gap-1">
-                        {template.features.map((feature, index) => (
-                          <Badge 
-                            key={index} 
-                            variant="secondary" 
-                            className="text-xs bg-muted/30 border-border/40"
-                          >
-                            {feature}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Deployment time:</span>
-                      <span className="font-medium">{template.deployment}</span>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <Button 
-                        className="flex-1 btn-gradient rounded-xl group-hover:scale-[1.02] transition-all duration-200"
-                        onClick={() => handleDeploy(template)}
-                        disabled={deployAgent.isPending}
-                      >
-                        <Zap className="h-4 w-4 mr-2" />
-                        {deployAgent.isPending ? 'Deploying...' : 'Deploy'}
-                      </Button>
-                      <Button variant="outline" size="icon" className="rounded-xl border-border/40">
-                        <Play className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+              {filteredTemplates.map((template) => renderTemplateCard(template))}
             </div>
           )}
 
