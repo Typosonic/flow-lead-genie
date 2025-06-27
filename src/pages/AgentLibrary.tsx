@@ -111,20 +111,26 @@ const AgentLibrary = () => {
   // Combine static templates with database templates
   const allTemplates = [
     ...staticTemplates,
-    ...(templates || []).map(t => ({
-      id: t.id,
-      name: t.name,
-      description: t.description,
-      category: t.category || "Other",
-      icon: t.configuration?.source === 'user-upload' ? "📦" : "🤖",
-      features: t.configuration?.source === 'user-upload' 
-        ? [`${t.configuration?.node_count || 0} n8n nodes`, "User Created"]
-        : ["Custom Template"],
-      deployment: "2 min",
-      popularity: t.usage_count > 10 ? "Popular" : t.configuration?.source === 'user-upload' ? "Community" : null,
-      configuration: t.configuration,
-      prompt_template: t.prompt_template
-    }))
+    ...(templates || []).map(t => {
+      // Properly type the configuration object
+      const config = t.configuration as Record<string, any> | null;
+      const isUserUpload = config?.source === 'user-upload';
+      
+      return {
+        id: t.id,
+        name: t.name,
+        description: t.description,
+        category: t.category || "Other",
+        icon: isUserUpload ? "📦" : "🤖",
+        features: isUserUpload 
+          ? [`${config?.node_count || 0} n8n nodes`, "User Created"]
+          : ["Custom Template"],
+        deployment: "2 min",
+        popularity: t.usage_count > 10 ? "Popular" : isUserUpload ? "Community" : null,
+        configuration: t.configuration,
+        prompt_template: t.prompt_template
+      };
+    })
   ];
 
   const filteredTemplates = allTemplates.filter(template => {
