@@ -37,7 +37,7 @@ export const useDeployAgent = () => {
       // Update template usage count if deploying from template (not static templates)
       if (templateData.id && !templateData.id.startsWith('static-')) {
         // First get the current usage count
-        const { data: templateData: currentTemplate, error: fetchError } = await supabase
+        const { data: currentTemplate, error: fetchError } = await supabase
           .from('agent_templates')
           .select('usage_count')
           .eq('id', templateData.id)
