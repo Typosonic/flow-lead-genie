@@ -4,6 +4,12 @@ import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/hooks/use-toast'
 
+interface ContainerAction {
+  workflowId: string
+  action: 'deploy' | 'stop' | 'restart' | 'status'
+  credentials?: Record<string, string>
+}
+
 export const useContainerManager = () => {
   const { user } = useAuth()
   const { toast } = useToast()
@@ -14,24 +20,30 @@ export const useContainerManager = () => {
     queryFn: async () => {
       if (!user) throw new Error('User not authenticated')
 
-      const { data, error } = await supabase
-        .from('user_containers')
-        .select('*')
-        .eq('user_id', user.id)
-        .single()
+      const { data, error } = await supabase.functions.invoke('container-manager', {
+        body: {
+          action: 'status',
+          workflowId: 'status-check'
+        }
+      })
 
-      if (error && error.code !== 'PGRST116') throw error
-      return { container: data }
+      if (error) throw error
+      return data
     },
-    enabled: !!user
+    enabled: !!user,
+    refetchInterval: 30000 // Refresh every 30 seconds
   })
 
-  const manageContainer = useMutation({
-    mutationFn: async ({ action, workflowId }: { action: 'stop' | 'restart'; workflowId: string }) => {
+  const deployContainer = useMutation({
+    mutationFn: async ({ workflowId, credentials }: { workflowId: string; credentials?: Record<string, string> }) => {
       if (!user) throw new Error('User not authenticated')
 
       const { data, error } = await supabase.functions.invoke('container-manager', {
-        body: { action, workflowId, userId: user.id }
+        body: {
+          action: 'deploy',
+          workflowId,
+          credentials
+        }
       })
 
       if (error) throw error
@@ -40,13 +52,74 @@ export const useContainerManager = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['container-status'] })
       toast({
-        title: "Container action completed",
-        description: "Container operation was successful.",
+        title: "Container deployment started",
+        description: "Your n8n container is being deployed.",
+      })
+    },
+    onError: (error) => {
+      console.error('Container deployment failed:', error)
+      toast({
+        title: "Deployment failed",
+        description: error.message,
+        variant: "destructive",
+      })
+    }
+  })
+
+  const stopContainer = useMutation({
+    mutationFn: async () => {
+      if (!user) throw new Error('User not authenticated')
+
+      const { data, error } = await supabase.functions.invoke('container-manager', {
+        body: {
+          action: 'stop',
+          workflowId: 'stop-request'
+        }
+      })
+
+      if (error) throw error
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['container-status'] })
+      toast({
+        title: "Container stopped",
+        description: "Your n8n container has been stopped.",
       })
     },
     onError: (error) => {
       toast({
-        title: "Container action failed",
+        title: "Failed to stop container",
+        description: error.message,
+        variant: "destructive",
+      })
+    }
+  })
+
+  const restartContainer = useMutation({
+    mutationFn: async () => {
+      if (!user) throw new Error('User not authenticated')
+
+      const { data, error } = await supabase.functions.invoke('container-manager', {
+        body: {
+          action: 'restart',
+          workflowId: 'restart-request'
+        }
+      })
+
+      if (error) throw error
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['container-status'] })
+      toast({
+        title: "Container restarting",
+        description: "Your n8n container is being restarted.",
+      })
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to restart container",
         description: error.message,
         variant: "destructive",
       })
@@ -55,7 +128,11 @@ export const useContainerManager = () => {
 
   return {
     containerStatus,
-    manageContainer,
-    isManaging: manageContainer.isPending
+    deployContainer,
+    stopContainer,
+    restartContainer,
+    isDeploying: deployContainer.isPending,
+    isStopping: stopContainer.isPending,
+    isRestarting: restartContainer.isPending
   }
 }

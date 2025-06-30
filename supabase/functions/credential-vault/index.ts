@@ -8,7 +8,7 @@ const corsHeaders = {
 }
 
 interface CredentialRequest {
-  service: string
+  serviceName: string
   credentials?: Record<string, string>
   action: 'store' | 'retrieve' | 'delete' | 'list'
 }
@@ -38,27 +38,27 @@ serve(async (req) => {
       throw new Error('Unauthorized')
     }
 
-    const { service, credentials, action }: CredentialRequest = await req.json()
+    const { serviceName, credentials, action }: CredentialRequest = await req.json()
 
-    console.log(`Credential Vault: ${action} for service ${service}, user ${user.id}`)
+    console.log(`Credential Vault: ${action} for service ${serviceName}, user ${user.id}`)
 
     // Log the credential access
     await supabase
       .from('credential_access_logs')
       .insert({
         user_id: user.id,
-        service_name: service,
+        service_name: serviceName,
         action,
         ip_address: req.headers.get('x-forwarded-for') || 'unknown'
       })
 
     switch (action) {
       case 'store':
-        return await storeCredentials(supabase, user.id, service, credentials!)
+        return await storeCredentials(supabase, user.id, serviceName, credentials!)
       case 'retrieve':
-        return await retrieveCredentials(supabase, user.id, service)
+        return await retrieveCredentials(supabase, user.id, serviceName)
       case 'delete':
-        return await deleteCredentials(supabase, user.id, service)
+        return await deleteCredentials(supabase, user.id, serviceName)
       case 'list':
         return await listServices(supabase, user.id)
       default:
@@ -77,7 +77,7 @@ serve(async (req) => {
   }
 })
 
-async function storeCredentials(supabase: any, userId: string, service: string, credentials: Record<string, string>) {
+async function storeCredentials(supabase: any, userId: string, serviceName: string, credentials: Record<string, string>) {
   // In production, encrypt credentials before storing
   const encryptedCredentials = JSON.stringify(credentials)
   
@@ -85,7 +85,7 @@ async function storeCredentials(supabase: any, userId: string, service: string, 
     .from('user_credentials')
     .upsert({
       user_id: userId,
-      service_name: service,
+      service_name: serviceName,
       encrypted_credentials: encryptedCredentials,
     })
     .select()
@@ -98,18 +98,18 @@ async function storeCredentials(supabase: any, userId: string, service: string, 
     JSON.stringify({ 
       success: true, 
       message: 'Credentials stored successfully',
-      service 
+      serviceName 
     }),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
   )
 }
 
-async function retrieveCredentials(supabase: any, userId: string, service: string) {
+async function retrieveCredentials(supabase: any, userId: string, serviceName: string) {
   const { data, error } = await supabase
     .from('user_credentials')
     .select('encrypted_credentials')
     .eq('user_id', userId)
-    .eq('service_name', service)
+    .eq('service_name', serviceName)
     .single()
 
   if (error && error.code !== 'PGRST116') {
@@ -130,18 +130,18 @@ async function retrieveCredentials(supabase: any, userId: string, service: strin
     JSON.stringify({ 
       success: true, 
       credentials,
-      service 
+      serviceName 
     }),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
   )
 }
 
-async function deleteCredentials(supabase: any, userId: string, service: string) {
+async function deleteCredentials(supabase: any, userId: string, serviceName: string) {
   const { error } = await supabase
     .from('user_credentials')
     .delete()
     .eq('user_id', userId)
-    .eq('service_name', service)
+    .eq('service_name', serviceName)
 
   if (error) {
     throw new Error(`Failed to delete credentials: ${error.message}`)
@@ -151,7 +151,7 @@ async function deleteCredentials(supabase: any, userId: string, service: string)
     JSON.stringify({ 
       success: true, 
       message: 'Credentials deleted successfully',
-      service 
+      serviceName 
     }),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
   )

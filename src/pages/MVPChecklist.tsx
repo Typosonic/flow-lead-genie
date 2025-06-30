@@ -20,12 +20,12 @@ interface ChecklistItem {
 
 const MVPChecklist = () => {
   const [items, setItems] = useState<ChecklistItem[]>([
-    // Infrastructure & Architecture (NEW SECTION)
+    // Infrastructure & Architecture (UPDATED SECTION)
     {
       id: "infrastructure-architecture",
       title: "Scalable Infrastructure Architecture Design",
       description: "Design multi-tenant architecture with containerized n8n, Edge Functions, and auto-scaling",
-      status: "critical",
+      status: "done",
       category: "Infrastructure",
       estimatedHours: 12,
       resources: [
@@ -37,7 +37,7 @@ const MVPChecklist = () => {
       id: "container-orchestration",
       title: "Container Orchestration Setup",
       description: "Set up Google Cloud Run for auto-scaling n8n instances per tenant",
-      status: "critical",
+      status: "done",
       category: "Infrastructure",
       estimatedHours: 16,
       dependencies: ["infrastructure-architecture"]
@@ -46,7 +46,7 @@ const MVPChecklist = () => {
       id: "credential-vault",
       title: "Centralized Credential Management",
       description: "Implement secure API key storage and injection system using Supabase Vault",
-      status: "critical",
+      status: "done",
       category: "Infrastructure",
       estimatedHours: 10,
       dependencies: ["infrastructure-architecture"]
@@ -55,7 +55,7 @@ const MVPChecklist = () => {
       id: "workflow-deployment-pipeline",
       title: "Dynamic Workflow Deployment Pipeline",
       description: "Build system for deploying pre-built n8n workflows to dedicated user containers",
-      status: "todo",
+      status: "done",
       category: "Infrastructure",
       estimatedHours: 20,
       dependencies: ["container-orchestration", "credential-vault"]
@@ -84,7 +84,7 @@ const MVPChecklist = () => {
       id: "auth-setup",
       title: "Supabase Authentication Setup",
       description: "Configure email/password auth, user tables, and RLS policies",
-      status: "critical",
+      status: "done",
       category: "Authentication",
       estimatedHours: 4,
       resources: [
@@ -115,7 +115,7 @@ const MVPChecklist = () => {
       id: "database-schema",
       title: "Scalable Database Schema Design",
       description: "Create partitioned tables for users, agents, leads, subscriptions with performance optimization",
-      status: "critical",
+      status: "done",
       category: "Backend",
       estimatedHours: 8,
       resources: [
@@ -126,7 +126,7 @@ const MVPChecklist = () => {
       id: "rls-policies",
       title: "Row Level Security Policies",
       description: "Implement secure RLS policies for all tables with multi-tenant isolation",
-      status: "todo",
+      status: "done",
       category: "Backend",
       estimatedHours: 6,
       dependencies: ["database-schema"]
@@ -135,7 +135,7 @@ const MVPChecklist = () => {
       id: "api-functions",
       title: "Supabase Edge Functions",
       description: "Create functions for agent deployment, lead processing, and external API integrations",
-      status: "todo",
+      status: "done",
       category: "Backend",
       estimatedHours: 20,
       dependencies: ["database-schema", "credential-vault"]
@@ -155,7 +155,7 @@ const MVPChecklist = () => {
       id: "n8n-integration",
       title: "Containerized n8n Workflow System",
       description: "Set up containerized n8n instances with dynamic deployment and credential injection",
-      status: "critical",
+      status: "in-progress",
       category: "AI Agents",
       estimatedHours: 24,
       dependencies: ["container-orchestration", "credential-vault"],
@@ -176,7 +176,7 @@ const MVPChecklist = () => {
       id: "agent-deployment",
       title: "Automated Agent Deployment Pipeline",
       description: "Build system for one-click agent deployment to dedicated user containers",
-      status: "todo",
+      status: "in-progress",
       category: "AI Agents",
       estimatedHours: 14,
       dependencies: ["agent-templates", "workflow-deployment-pipeline"]
