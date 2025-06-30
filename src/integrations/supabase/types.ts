@@ -169,6 +169,93 @@ export type Database = {
           },
         ]
       }
+      automation_logs: {
+        Row: {
+          action_type: string
+          details: Json | null
+          executed_at: string
+          id: string
+          lead_id: string | null
+          rule_id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          action_type: string
+          details?: Json | null
+          executed_at?: string
+          id?: string
+          lead_id?: string | null
+          rule_id: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          action_type?: string
+          details?: Json | null
+          executed_at?: string
+          id?: string
+          lead_id?: string | null
+          rule_id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_logs_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "automation_logs_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "automation_rules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      automation_rules: {
+        Row: {
+          action: Json
+          created_at: string
+          delay: number
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          trigger: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          action?: Json
+          created_at?: string
+          delay?: number
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          trigger?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          action?: Json
+          created_at?: string
+          delay?: number
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          trigger?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       communications: {
         Row: {
           agent_id: string | null
