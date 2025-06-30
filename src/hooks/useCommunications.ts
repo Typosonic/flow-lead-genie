@@ -48,18 +48,62 @@ export const useCreateCommunication = () => {
       agentId,
       type,
       content,
-      direction = 'outbound'
+      direction = 'outbound',
+      useTwilio = false
     }: {
       leadId: string
       agentId?: string
       type: CommunicationType
       content: string
       direction?: 'inbound' | 'outbound'
+      useTwilio?: boolean
     }) => {
       if (!user) throw new Error('User not authenticated')
 
-      console.log('Creating communication:', { leadId, type, direction })
+      console.log('Creating communication:', { leadId, type, direction, useTwilio })
 
+      // If using Twilio for SMS or voice, get lead phone number first
+      if (useTwilio && (type === 'sms' || type === 'voice')) {
+        const { data: lead, error: leadError } = await supabase
+          .from('leads')
+          .select('phone')
+          .eq('id', leadId)
+          .single()
+
+        if (leadError || !lead?.phone) {
+          throw new Error('Lead phone number not found')
+        }
+
+        // Send via Twilio
+        if (type === 'sms') {
+          const { data: twilioData, error: twilioError } = await supabase.functions.invoke('twilio-service', {
+            body: {
+              action: 'send_sms',
+              to: lead.phone,
+              message: content
+            }
+          })
+
+          if (twilioError) throw twilioError
+          
+          // Communication record is created by the Twilio service
+          return twilioData
+        } else if (type === 'voice') {
+          const { data: twilioData, error: twilioError } = await supabase.functions.invoke('twilio-service', {
+            body: {
+              action: 'make_call',
+              to: lead.phone
+            }
+          })
+
+          if (twilioError) throw twilioError
+          
+          // Communication record is created by the Twilio service
+          return twilioData
+        }
+      }
+
+      // Regular communication (not via Twilio)
       const { data, error } = await supabase
         .from('communications')
         .insert({
@@ -83,7 +127,7 @@ export const useCreateCommunication = () => {
       
       toast({
         title: "Communication sent",
-        description: `${data.type} message has been sent successfully.`,
+        description: `${data.type || 'Message'} has been sent successfully.`,
       })
     },
     onError: (error) => {
