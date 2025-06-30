@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -10,6 +9,7 @@ import AgentLibrary from "./AgentLibrary";
 import AgentBuilder from "./AgentBuilder";
 import SpyTools from "./SpyTools";
 import MVPChecklist from "./MVPChecklist";
+import Settings from "./Settings";
 import OnboardingWalkthrough from "@/components/OnboardingWalkthrough";
 
 const Index = () => {
@@ -38,12 +38,7 @@ const Index = () => {
       case "checklist":
         return <MVPChecklist />;
       case "settings":
-        return (
-          <div className="p-6">
-            <h1 className="text-3xl font-bold mb-4">Settings</h1>
-            <p className="text-muted-foreground">Configure your account and agent preferences.</p>
-          </div>
-        );
+        return <Settings />;
       case "help":
         return (
           <div className="p-6">
