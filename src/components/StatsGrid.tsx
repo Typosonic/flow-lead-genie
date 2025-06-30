@@ -1,80 +1,74 @@
 
-import { Calendar, Phone, TrendingUp, Users } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { useLeadStats } from '@/hooks/useLeads';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useLeadStats } from '@/hooks/useLeads'
+import { TrendingUp, Phone, Calendar, BarChart3 } from 'lucide-react'
 
 const StatsGrid = () => {
-  const { data: stats, isLoading } = useLeadStats();
-
-  const statsConfig = [
-    {
-      title: "Leads Today",
-      value: stats?.leadsToday || 0,
-      change: "+12%",
-      icon: Users,
-      color: "text-green-500"
-    },
-    {
-      title: "Calls Placed",
-      value: stats?.callsPlaced || 0,
-      change: "+8%",
-      icon: Phone,
-      color: "text-brand-500"
-    },
-    {
-      title: "Bookings",
-      value: stats?.bookings || 0,
-      change: "+15%",
-      icon: Calendar,
-      color: "text-purple-500"
-    },
-    {
-      title: "Response Rate",
-      value: `${stats?.responseRate || 0}%`,
-      change: "+5%",
-      icon: TrendingUp,
-      color: "text-orange-500"
-    }
-  ];
+  const { data: stats, isLoading } = useLeadStats()
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {[...Array(4)].map((_, i) => (
-          <Card key={i} className="glass-morphism border-border/40">
-            <CardContent className="p-6">
-              <div className="animate-pulse">
-                <div className="h-4 w-20 bg-muted rounded mb-2" />
-                <div className="h-8 w-16 bg-muted rounded mb-2" />
-                <div className="h-3 w-12 bg-muted rounded" />
-              </div>
+          <Card key={i}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Loading...</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-6 bg-muted animate-pulse rounded" />
             </CardContent>
           </Card>
         ))}
       </div>
-    );
+    )
   }
 
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      {statsConfig.map((stat, index) => (
-        <Card key={index} className="glass-morphism border-border/40 card-hover">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
-                <p className="text-2xl font-bold">{stat.value}</p>
-                <p className={`text-sm ${stat.color}`}>{stat.change}</p>
-              </div>
-              <div className={`p-3 rounded-2xl bg-gradient-to-br from-${stat.color.split('-')[1]}-500/20 to-${stat.color.split('-')[1]}-600/20`}>
-                <stat.icon className={`h-6 w-6 ${stat.color}`} />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  );
-};
+  const statCards = [
+    {
+      title: "Leads Today",
+      value: stats?.leadsToday || 0,
+      icon: TrendingUp,
+      description: "New leads generated today"
+    },
+    {
+      title: "Calls Placed",
+      value: stats?.callsPlaced || 0,
+      icon: Phone,
+      description: "Automated calls made today"
+    },
+    {
+      title: "Bookings",
+      value: stats?.bookings || 0,
+      icon: Calendar,
+      description: "Successful conversions"
+    },
+    {
+      title: "Response Rate",
+      value: `${stats?.responseRate || 0}%`,
+      icon: BarChart3,
+      description: "Overall conversion rate"
+    }
+  ]
 
-export default StatsGrid;
+  return (
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {statCards.map((stat, index) => {
+        const Icon = stat.icon
+        return (
+          <Card key={index}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
+              <Icon className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stat.value}</div>
+              <p className="text-xs text-muted-foreground">{stat.description}</p>
+            </CardContent>
+          </Card>
+        )
+      })}
+    </div>
+  )
+}
+
+export default StatsGrid
