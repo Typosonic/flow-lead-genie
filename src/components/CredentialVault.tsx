@@ -59,7 +59,7 @@ const CredentialVault = () => {
     if (!selectedService || !credentials) return
 
     await storeCredentials.mutateAsync({
-      service: selectedService,
+      serviceName: selectedService,
       credentials
     })
 
@@ -67,8 +67,8 @@ const CredentialVault = () => {
     setSelectedService('')
   }
 
-  const handleDeleteCredentials = async (service: string) => {
-    await deleteCredentials.mutateAsync({ service })
+  const handleDeleteCredentials = async (serviceName: string) => {
+    await deleteCredentials.mutateAsync(serviceName)
   }
 
   const toggleShowCredential = (field: string) => {
