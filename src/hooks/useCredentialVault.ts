@@ -26,6 +26,23 @@ export const useCredentialVault = () => {
     enabled: !!user
   })
 
+  const userServices = useQuery({
+    queryKey: ['user-services', user?.id],
+    queryFn: async () => {
+      if (!user) throw new Error('User not authenticated')
+
+      const { data, error } = await supabase
+        .from('user_credentials')
+        .select('service_name, created_at')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      return { services: data }
+    },
+    enabled: !!user
+  })
+
   const storeCredentials = useMutation({
     mutationFn: async ({ serviceName, credentials }: { 
       serviceName: string
@@ -49,6 +66,7 @@ export const useCredentialVault = () => {
     },
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['user-credentials'] })
+      queryClient.invalidateQueries({ queryKey: ['user-services'] })
       toast({
         title: "Credentials stored",
         description: `${variables.serviceName} credentials have been securely stored.`,
@@ -98,6 +116,7 @@ export const useCredentialVault = () => {
     },
     onSuccess: (data, serviceName) => {
       queryClient.invalidateQueries({ queryKey: ['user-credentials'] })
+      queryClient.invalidateQueries({ queryKey: ['user-services'] })
       toast({
         title: "Credentials deleted",
         description: `${serviceName} credentials have been removed.`,
@@ -114,6 +133,7 @@ export const useCredentialVault = () => {
 
   return {
     credentials,
+    userServices,
     storeCredentials,
     retrieveCredentials,
     deleteCredentials,

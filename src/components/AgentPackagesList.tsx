@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAgentPackages, useExtractedWorkflows } from '@/hooks/useAgentPackages';
 
 const AgentPackagesList = () => {
-  const { data: packages, isLoading } = useAgentPackages();
+  const { packages } = useAgentPackages();
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -55,7 +55,7 @@ const AgentPackagesList = () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  if (isLoading) {
+  if (packages.isLoading) {
     return (
       <div className="space-y-4">
         <h3 className="text-lg font-semibold">Uploaded Packages</h3>
@@ -76,7 +76,7 @@ const AgentPackagesList = () => {
     );
   }
 
-  if (!packages || packages.length === 0) {
+  if (!packages.data || packages.data.length === 0) {
     return (
       <div className="space-y-4">
         <h3 className="text-lg font-semibold">Uploaded Packages</h3>
@@ -92,9 +92,9 @@ const AgentPackagesList = () => {
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold">Uploaded Packages ({packages.length})</h3>
+      <h3 className="text-lg font-semibold">Uploaded Packages ({packages.data.length})</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {packages.map((pkg) => (
+        {packages.data.map((pkg) => (
           <PackageCard key={pkg.id} pkg={pkg} />
         ))}
       </div>

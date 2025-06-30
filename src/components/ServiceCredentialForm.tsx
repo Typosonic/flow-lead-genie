@@ -40,7 +40,7 @@ const ServiceCredentialForm = () => {
 
     try {
       await storeCredentials.mutateAsync({
-        service: serviceName,
+        serviceName,
         credentials
       })
       

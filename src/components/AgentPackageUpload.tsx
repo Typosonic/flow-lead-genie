@@ -3,12 +3,14 @@ import { useState, useCallback } from 'react';
 import { Upload, File, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useUploadAgentPackage } from '@/hooks/useAgentPackages';
+import { useAgentPackages } from '@/hooks/useAgentPackages';
 
 const AgentPackageUpload = () => {
   const [dragActive, setDragActive] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const uploadPackage = useUploadAgentPackage();
+  const [packageName, setPackageName] = useState('');
+  const [packageDescription, setPackageDescription] = useState('');
+  const { uploadPackage, isUploading } = useAgentPackages();
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -29,6 +31,7 @@ const AgentPackageUpload = () => {
       const file = e.dataTransfer.files[0];
       if (file.type === 'application/zip' || file.name.endsWith('.zip')) {
         setSelectedFile(file);
+        setPackageName(file.name.replace('.zip', ''));
       }
     }
   }, []);
@@ -38,15 +41,22 @@ const AgentPackageUpload = () => {
       const file = e.target.files[0];
       if (file.type === 'application/zip' || file.name.endsWith('.zip')) {
         setSelectedFile(file);
+        setPackageName(file.name.replace('.zip', ''));
       }
     }
   };
 
   const handleUpload = () => {
-    if (selectedFile) {
-      uploadPackage.mutate(selectedFile, {
+    if (selectedFile && packageName) {
+      uploadPackage.mutate({
+        file: selectedFile,
+        name: packageName,
+        description: packageDescription
+      }, {
         onSuccess: () => {
           setSelectedFile(null);
+          setPackageName('');
+          setPackageDescription('');
         }
       });
     }
@@ -122,18 +132,48 @@ const AgentPackageUpload = () => {
               </Button>
             </div>
             
+            <div className="space-y-3">
+              <div>
+                <label htmlFor="package-name" className="block text-sm font-medium mb-1">
+                  Package Name
+                </label>
+                <input
+                  id="package-name"
+                  type="text"
+                  value={packageName}
+                  onChange={(e) => setPackageName(e.target.value)}
+                  className="w-full px-3 py-2 border border-border rounded-md bg-background"
+                  placeholder="Enter package name"
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="package-description" className="block text-sm font-medium mb-1">
+                  Description (optional)
+                </label>
+                <textarea
+                  id="package-description"
+                  value={packageDescription}
+                  onChange={(e) => setPackageDescription(e.target.value)}
+                  className="w-full px-3 py-2 border border-border rounded-md bg-background"
+                  placeholder="Describe what this package contains"
+                  rows={3}
+                />
+              </div>
+            </div>
+            
             <div className="flex gap-2">
               <Button 
                 onClick={handleUpload}
-                disabled={uploadPackage.isPending}
+                disabled={isUploading || !packageName}
                 className="flex-1"
               >
-                {uploadPackage.isPending ? 'Uploading...' : 'Upload Package'}
+                {isUploading ? 'Uploading...' : 'Upload Package'}
               </Button>
               <Button 
                 variant="outline" 
                 onClick={() => setSelectedFile(null)}
-                disabled={uploadPackage.isPending}
+                disabled={isUploading}
               >
                 Cancel
               </Button>

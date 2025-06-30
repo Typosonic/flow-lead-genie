@@ -1,5 +1,5 @@
 
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/hooks/use-toast'
@@ -14,6 +14,28 @@ export const useDeploymentOrchestrator = () => {
   const { user } = useAuth()
   const { toast } = useToast()
   const queryClient = useQueryClient()
+
+  const deploymentLogs = useQuery({
+    queryKey: ['deployment-logs', user?.id],
+    queryFn: async () => {
+      if (!user) throw new Error('User not authenticated')
+
+      const { data, error } = await supabase
+        .from('deployment_logs')
+        .select(`
+          *,
+          agents (name),
+          agent_templates (name)
+        `)
+        .eq('user_id', user.id)
+        .order('deployment_time', { ascending: false })
+        .limit(20)
+
+      if (error) throw error
+      return data
+    },
+    enabled: !!user
+  })
 
   const deployAgent = useMutation({
     mutationFn: async (params: DeploymentParams) => {
@@ -98,6 +120,7 @@ export const useDeploymentOrchestrator = () => {
   })
 
   return {
+    deploymentLogs,
     deployAgent,
     isDeploying: deployAgent.isPending
   }
