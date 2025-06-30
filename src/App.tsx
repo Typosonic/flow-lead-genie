@@ -1,3 +1,4 @@
+
 import React from "react"
 import {
   BrowserRouter as Router,
@@ -10,19 +11,18 @@ import {
 } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster"
 import { ThemeProvider } from "@/components/theme-provider"
-import { Auth } from "@/pages/Auth";
-import { Dashboard } from "@/pages/Dashboard";
-import { AgentBuilder } from "@/pages/AgentBuilder";
-import { AgentLibrary } from "@/pages/AgentLibrary";
-import { SpyTools } from "@/pages/SpyTools";
-import { Settings } from "@/pages/Settings";
-import { NotFound } from "@/pages/NotFound";
+import Auth from "@/pages/Auth";
+import Dashboard from "@/pages/Dashboard";
+import AgentBuilder from "@/pages/AgentBuilder";
+import AgentLibrary from "@/pages/AgentLibrary";
+import SpyTools from "@/pages/SpyTools";
+import Settings from "@/pages/Settings";
+import NotFound from "@/pages/NotFound";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
-import { SidebarProvider, SidebarInset } from "@/components/AppSidebar";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
-import { MVPChecklist } from "@/pages/MVPChecklist";
-
+import MVPChecklist from "@/pages/MVPChecklist";
 import Infrastructure from "@/pages/Infrastructure";
 
 const queryClient = new QueryClient();
