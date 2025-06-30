@@ -274,6 +274,111 @@ export type Database = {
           },
         ]
       }
+      container_events: {
+        Row: {
+          container_id: string
+          created_at: string
+          event_type: string
+          id: string
+          metadata: Json | null
+          user_id: string
+          workflow_id: string | null
+        }
+        Insert: {
+          container_id: string
+          created_at?: string
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          user_id: string
+          workflow_id?: string | null
+        }
+        Update: {
+          container_id?: string
+          created_at?: string
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          user_id?: string
+          workflow_id?: string | null
+        }
+        Relationships: []
+      }
+      credential_access_logs: {
+        Row: {
+          action: string
+          id: string
+          ip_address: string | null
+          service_name: string
+          timestamp: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          id?: string
+          ip_address?: string | null
+          service_name: string
+          timestamp?: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          id?: string
+          ip_address?: string | null
+          service_name?: string
+          timestamp?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      deployment_logs: {
+        Row: {
+          agent_id: string | null
+          container_id: string
+          deployment_time: string
+          id: string
+          metadata: Json | null
+          status: string
+          template_id: string | null
+          user_id: string
+        }
+        Insert: {
+          agent_id?: string | null
+          container_id: string
+          deployment_time?: string
+          id?: string
+          metadata?: Json | null
+          status?: string
+          template_id?: string | null
+          user_id: string
+        }
+        Update: {
+          agent_id?: string | null
+          container_id?: string
+          deployment_time?: string
+          id?: string
+          metadata?: Json | null
+          status?: string
+          template_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deployment_logs_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deployment_logs_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "agent_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       extracted_workflows: {
         Row: {
           created_at: string
@@ -598,6 +703,81 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_containers: {
+        Row: {
+          container_id: string
+          container_url: string | null
+          created_at: string
+          deployed_at: string | null
+          id: string
+          last_deployed_at: string | null
+          last_restart_at: string | null
+          region: string
+          resources: Json | null
+          status: string
+          stopped_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          container_id: string
+          container_url?: string | null
+          created_at?: string
+          deployed_at?: string | null
+          id?: string
+          last_deployed_at?: string | null
+          last_restart_at?: string | null
+          region?: string
+          resources?: Json | null
+          status?: string
+          stopped_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          container_id?: string
+          container_url?: string | null
+          created_at?: string
+          deployed_at?: string | null
+          id?: string
+          last_deployed_at?: string | null
+          last_restart_at?: string | null
+          region?: string
+          resources?: Json | null
+          status?: string
+          stopped_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_credentials: {
+        Row: {
+          created_at: string
+          encrypted_credentials: string
+          id: string
+          service_name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          encrypted_credentials: string
+          id?: string
+          service_name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          encrypted_credentials?: string
+          id?: string
+          service_name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
     }
     Views: {

@@ -2,6 +2,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface ContainerAction {
   workflowId: string
@@ -12,9 +13,12 @@ interface ContainerAction {
 export const useContainerManager = () => {
   const { toast } = useToast()
   const queryClient = useQueryClient()
+  const { user } = useAuth()
 
   const deployContainer = useMutation({
     mutationFn: async ({ workflowId, credentials }: { workflowId: string, credentials?: Record<string, string> }) => {
+      if (!user) throw new Error('User not authenticated')
+
       const { data, error } = await supabase.functions.invoke('container-manager', {
         body: {
           action: 'deploy',
@@ -45,6 +49,8 @@ export const useContainerManager = () => {
 
   const manageContainer = useMutation({
     mutationFn: async ({ action, workflowId }: ContainerAction) => {
+      if (!user) throw new Error('User not authenticated')
+
       const { data, error } = await supabase.functions.invoke('container-manager', {
         body: { action, workflowId }
       })
@@ -69,8 +75,10 @@ export const useContainerManager = () => {
   })
 
   const containerStatus = useQuery({
-    queryKey: ['container-status'],
+    queryKey: ['container-status', user?.id],
     queryFn: async () => {
+      if (!user) throw new Error('User not authenticated')
+
       const { data, error } = await supabase.functions.invoke('container-manager', {
         body: { action: 'status', workflowId: '' }
       })
@@ -78,6 +86,7 @@ export const useContainerManager = () => {
       if (error) throw error
       return data
     },
+    enabled: !!user,
     refetchInterval: 30000 // Poll every 30 seconds
   })
 

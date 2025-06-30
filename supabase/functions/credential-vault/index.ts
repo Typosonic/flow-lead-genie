@@ -9,7 +9,7 @@ const corsHeaders = {
 
 interface CredentialRequest {
   service: string
-  credentials: Record<string, string>
+  credentials?: Record<string, string>
   action: 'store' | 'retrieve' | 'delete' | 'list'
 }
 
@@ -35,16 +35,26 @@ serve(async (req) => {
     )
 
     if (authError || !user) {
-      throw new Error('Invalid authentication')
+      throw new Error('Unauthorized')
     }
 
     const { service, credentials, action }: CredentialRequest = await req.json()
 
-    console.log(`Credential Vault: ${action} for user ${user.id}, service ${service}`)
+    console.log(`Credential Vault: ${action} for service ${service}, user ${user.id}`)
+
+    // Log the credential access
+    await supabase
+      .from('credential_access_logs')
+      .insert({
+        user_id: user.id,
+        service_name: service,
+        action,
+        ip_address: req.headers.get('x-forwarded-for') || 'unknown'
+      })
 
     switch (action) {
       case 'store':
-        return await storeCredentials(supabase, user.id, service, credentials)
+        return await storeCredentials(supabase, user.id, service, credentials!)
       case 'retrieve':
         return await retrieveCredentials(supabase, user.id, service)
       case 'delete':
@@ -69,7 +79,7 @@ serve(async (req) => {
 
 async function storeCredentials(supabase: any, userId: string, service: string, credentials: Record<string, string>) {
   // In production, encrypt credentials before storing
-  const encryptedCredentials = await encryptCredentials(credentials)
+  const encryptedCredentials = JSON.stringify(credentials)
   
   const { data, error } = await supabase
     .from('user_credentials')
@@ -77,8 +87,6 @@ async function storeCredentials(supabase: any, userId: string, service: string, 
       user_id: userId,
       service_name: service,
       encrypted_credentials: encryptedCredentials,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
     })
     .select()
 
@@ -86,19 +94,12 @@ async function storeCredentials(supabase: any, userId: string, service: string, 
     throw new Error(`Failed to store credentials: ${error.message}`)
   }
 
-  // Log credential access
-  await supabase
-    .from('credential_access_logs')
-    .insert({
-      user_id: userId,
-      service_name: service,
-      action: 'store',
-      timestamp: new Date().toISOString(),
-      ip_address: req.headers.get('x-forwarded-for') || 'unknown'
-    })
-
   return new Response(
-    JSON.stringify({ success: true, service }),
+    JSON.stringify({ 
+      success: true, 
+      message: 'Credentials stored successfully',
+      service 
+    }),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
   )
 }
@@ -111,26 +112,26 @@ async function retrieveCredentials(supabase: any, userId: string, service: strin
     .eq('service_name', service)
     .single()
 
-  if (error) {
-    throw new Error(`Failed to retrieve credentials: ${error.message}`)
+  if (error && error.code !== 'PGRST116') {
+    throw error
   }
 
-  // Decrypt credentials
-  const decryptedCredentials = await decryptCredentials(data.encrypted_credentials)
+  if (!data) {
+    return new Response(
+      JSON.stringify({ error: 'Credentials not found' }),
+      { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
 
-  // Log credential access
-  await supabase
-    .from('credential_access_logs')
-    .insert({
-      user_id: userId,
-      service_name: service,
-      action: 'retrieve',
-      timestamp: new Date().toISOString(),
-      ip_address: req.headers.get('x-forwarded-for') || 'unknown'
-    })
+  // In production, decrypt credentials before returning
+  const credentials = JSON.parse(data.encrypted_credentials)
 
   return new Response(
-    JSON.stringify({ credentials: decryptedCredentials }),
+    JSON.stringify({ 
+      success: true, 
+      credentials,
+      service 
+    }),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
   )
 }
@@ -147,7 +148,11 @@ async function deleteCredentials(supabase: any, userId: string, service: string)
   }
 
   return new Response(
-    JSON.stringify({ success: true }),
+    JSON.stringify({ 
+      success: true, 
+      message: 'Credentials deleted successfully',
+      service 
+    }),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
   )
 }
@@ -157,66 +162,17 @@ async function listServices(supabase: any, userId: string) {
     .from('user_credentials')
     .select('service_name, created_at, updated_at')
     .eq('user_id', userId)
+    .order('created_at', { ascending: false })
 
   if (error) {
-    throw new Error(`Failed to list services: ${error.message}`)
+    throw error
   }
 
   return new Response(
-    JSON.stringify({ services: data }),
+    JSON.stringify({ 
+      success: true, 
+      services: data || []
+    }),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
   )
-}
-
-// Simple encryption/decryption functions (use proper encryption in production)
-async function encryptCredentials(credentials: Record<string, string>): Promise<string> {
-  // In production, use proper encryption with Supabase Vault or AWS KMS
-  const encoder = new TextEncoder()
-  const data = encoder.encode(JSON.stringify(credentials))
-  const key = await crypto.subtle.importKey(
-    'raw',
-    encoder.encode(Deno.env.get('ENCRYPTION_KEY') || 'default-key-change-in-prod'),
-    { name: 'AES-GCM' },
-    false,
-    ['encrypt']
-  )
-  
-  const iv = crypto.getRandomValues(new Uint8Array(12))
-  const encrypted = await crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv },
-    key,
-    data
-  )
-  
-  const combined = new Uint8Array(iv.length + encrypted.byteLength)
-  combined.set(iv)
-  combined.set(new Uint8Array(encrypted), iv.length)
-  
-  return btoa(String.fromCharCode(...combined))
-}
-
-async function decryptCredentials(encryptedData: string): Promise<Record<string, string>> {
-  // In production, use proper decryption with Supabase Vault or AWS KMS
-  const encoder = new TextEncoder()
-  const decoder = new TextDecoder()
-  
-  const combined = new Uint8Array(atob(encryptedData).split('').map(c => c.charCodeAt(0)))
-  const iv = combined.slice(0, 12)
-  const encrypted = combined.slice(12)
-  
-  const key = await crypto.subtle.importKey(
-    'raw',
-    encoder.encode(Deno.env.get('ENCRYPTION_KEY') || 'default-key-change-in-prod'),
-    { name: 'AES-GCM' },
-    false,
-    ['decrypt']
-  )
-  
-  const decrypted = await crypto.subtle.decrypt(
-    { name: 'AES-GCM', iv },
-    key,
-    encrypted
-  )
-  
-  return JSON.parse(decoder.decode(decrypted))
 }

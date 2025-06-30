@@ -2,6 +2,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface CredentialOperation {
   service: string
@@ -12,9 +13,12 @@ interface CredentialOperation {
 export const useCredentialVault = () => {
   const { toast } = useToast()
   const queryClient = useQueryClient()
+  const { user } = useAuth()
 
   const storeCredentials = useMutation({
     mutationFn: async ({ service, credentials }: { service: string, credentials: Record<string, string> }) => {
+      if (!user) throw new Error('User not authenticated')
+
       const { data, error } = await supabase.functions.invoke('credential-vault', {
         body: {
           service,
@@ -44,6 +48,8 @@ export const useCredentialVault = () => {
 
   const retrieveCredentials = useMutation({
     mutationFn: async ({ service }: { service: string }) => {
+      if (!user) throw new Error('User not authenticated')
+
       const { data, error } = await supabase.functions.invoke('credential-vault', {
         body: {
           service,
@@ -58,6 +64,8 @@ export const useCredentialVault = () => {
 
   const deleteCredentials = useMutation({
     mutationFn: async ({ service }: { service: string }) => {
+      if (!user) throw new Error('User not authenticated')
+
       const { data, error } = await supabase.functions.invoke('credential-vault', {
         body: {
           service,
@@ -78,15 +86,18 @@ export const useCredentialVault = () => {
   })
 
   const userServices = useQuery({
-    queryKey: ['user-services'],
+    queryKey: ['user-services', user?.id],
     queryFn: async () => {
+      if (!user) throw new Error('User not authenticated')
+
       const { data, error } = await supabase.functions.invoke('credential-vault', {
         body: { action: 'list', service: '' }
       })
 
       if (error) throw error
       return data
-    }
+    },
+    enabled: !!user
   })
 
   return {
