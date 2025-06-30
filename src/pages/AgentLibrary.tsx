@@ -1,432 +1,153 @@
-import { useState, useEffect } from "react";
-import { Bot, MessageSquare, Phone, Search, Zap, Filter, Play, Upload, Folder, Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import CreateAgentDialog from "@/components/CreateAgentDialog";
-import UserAgentsSection from "@/components/UserAgentsSection";
-import AgentPackageUpload from "@/components/AgentPackageUpload";
-import AgentPackagesList from "@/components/AgentPackagesList";
-import N8nWorkflowUpload from "@/components/N8nWorkflowUpload";
-import { useAgentTemplates } from "@/hooks/useAgentTemplates";
-import { useDeployAgent } from "@/hooks/useDeployAgent";
-import { useAgentPackages } from "@/hooks/useAgentPackages";
-import { useDeleteAgentTemplate } from "@/hooks/useDeleteAgentTemplate";
+
+import { useState } from 'react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { useAgentTemplates } from '@/hooks/useAgentTemplates'
+import DeployAgentDialog from '@/components/DeployAgentDialog'
+import UserAgentsSection from '@/components/UserAgentsSection'
+import { Search, Bot, Star, Zap, Users } from 'lucide-react'
 
 const AgentLibrary = () => {
-  const [selectedCategory, setSelectedCategory] = useState("All");
-  const [searchQuery, setSearchQuery] = useState("");
-  
-  const { data: templates, isLoading: templatesLoading, refetch: refetchTemplates } = useAgentTemplates();
-  const { data: packages } = useAgentPackages();
-  const deployAgent = useDeployAgent();
-  const deleteTemplate = useDeleteAgentTemplate();
+  const { data: templates, isLoading } = useAgentTemplates()
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedTemplate, setSelectedTemplate] = useState<{ id: string; name: string } | null>(null)
+  const [isDeployDialogOpen, setIsDeployDialogOpen] = useState(false)
 
-  // Refresh templates when packages are processed
-  useEffect(() => {
-    if (packages && packages.some(pkg => pkg.status === 'completed')) {
-      refetchTemplates();
-    }
-  }, [packages, refetchTemplates]);
+  const filteredTemplates = templates?.filter(template =>
+    template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    template.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    template.category?.toLowerCase().includes(searchQuery.toLowerCase())
+  )
 
-  // Static template agents for demonstration
-  const staticTemplates = [
-    {
-      id: "static-1",
-      name: "Ad-Flow Agent",
-      description: "Automatically follow up with Facebook leads via SMS and voice calls",
-      category: "Ads",
-      icon: "🎯",
-      features: ["SMS Follow-up", "Voice Calls", "Booking Integration"],
-      deployment: "5 min",
-      popularity: "Most Popular",
-      configuration: { type: "ad-flow", automation: true },
-      prompt_template: "You are an AI assistant specialized in following up with Facebook ad leads..."
-    },
-    {
-      id: "static-2",
-      name: "Real Estate SDR",
-      description: "Qualify leads and book property viewings automatically",
-      category: "Real Estate",
-      icon: "🏠",
-      features: ["Lead Qualification", "Appointment Booking", "Follow-up Sequences"],
-      deployment: "3 min",
-      popularity: null,
-      configuration: { type: "real-estate-sdr", qualification: true },
-      prompt_template: "You are a real estate sales development representative..."
-    },
-    {
-      id: "static-3",
-      name: "E-commerce Chatbot",
-      description: "Handle customer inquiries and abandoned cart recovery",
-      category: "Chatbot",
-      icon: "🛒",
-      features: ["24/7 Support", "Cart Recovery", "Product Recommendations"],
-      deployment: "2 min",
-      popularity: null,
-      configuration: { type: "ecommerce-chatbot", support: true },
-      prompt_template: "You are an e-commerce customer support specialist..."
-    },
-    {
-      id: "static-4",
-      name: "Service Business SDR",
-      description: "Convert service inquiries into booked consultations",
-      category: "SDR",
-      icon: "🔧",
-      features: ["Consultation Booking", "Service Qualification", "Price Quotes"],
-      deployment: "4 min",
-      popularity: "Trending",
-      configuration: { type: "service-sdr", booking: true },
-      prompt_template: "You are a service business sales representative..."
-    },
-    {
-      id: "static-5",
-      name: "Content Creator Assistant",
-      description: "Engage with potential clients and book content creation calls",
-      category: "Content",
-      icon: "📸",
-      features: ["Portfolio Sharing", "Package Explanation", "Call Booking"],
-      deployment: "3 min",
-      popularity: null,
-      configuration: { type: "content-creator", portfolio: true },
-      prompt_template: "You are a content creation specialist..."
-    },
-    {
-      id: "static-6",
-      name: "Voice-First Sales Agent",
-      description: "Prioritizes voice calls for high-touch sales processes",
-      category: "Voice",
-      icon: "🎙️",
-      features: ["Voice-First Approach", "Call Scripts", "CRM Integration"],
-      deployment: "6 min",
-      popularity: null,
-      configuration: { type: "voice-sales", calls: true },
-      prompt_template: "You are a voice-first sales specialist..."
-    }
-  ];
+  const handleDeploy = (template: { id: string; name: string }) => {
+    setSelectedTemplate(template)
+    setIsDeployDialogOpen(true)
+  }
 
-  // Combine static templates with database templates
-  const allTemplates = [
-    ...staticTemplates,
-    ...(templates || []).map(t => {
-      const config = t.configuration as Record<string, any> | null;
-      const isUserUpload = config?.source === 'folder-upload';
-      
-      return {
-        id: t.id,
-        name: t.name,
-        description: t.description,
-        category: t.category || "Other",
-        icon: isUserUpload ? "📁" : "🤖",
-        features: isUserUpload 
-          ? [`${config?.node_count || 0} n8n nodes`, config?.folder_name ? `From ${config.folder_name}` : "User Created"]
-          : ["Custom Template"],
-        deployment: "2 min",
-        popularity: t.usage_count > 10 ? "Popular" : isUserUpload ? "Community" : null,
-        configuration: t.configuration,
-        prompt_template: t.prompt_template,
-        folderName: config?.folder_name,
-        isUserCreated: !t.id.startsWith('static-')
-      };
-    })
-  ];
-
-  // Get all unique categories including uploaded ones
-  const allCategories = Array.from(new Set([
-    "All",
-    ...allTemplates.map(t => t.category).filter(Boolean)
-  ])).sort();
-
-  // Group templates by category for organized sections
-  const templatesByCategory = allTemplates.reduce((groups, template) => {
-    const category = template.category || "Other";
-    if (!groups[category]) groups[category] = [];
-    groups[category].push(template);
-    return groups;
-  }, {} as Record<string, typeof allTemplates>);
-
-  const filteredTemplates = allTemplates.filter(template => {
-    const matchesCategory = selectedCategory === "All" || template.category === selectedCategory;
-    const matchesSearch = template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         template.description.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
-
-  const getCategoryColor = (category: string) => {
-    const colors = {
-      "SDR": "bg-blue-500/20 text-blue-400 border-blue-500/30",
-      "Chatbot": "bg-green-500/20 text-green-400 border-green-500/30",
-      "Voice": "bg-purple-500/20 text-purple-400 border-purple-500/30",
-      "Content": "bg-pink-500/20 text-pink-400 border-pink-500/30",
-      "Creative & Content": "bg-pink-500/20 text-pink-400 border-pink-500/30",
-      "Ads": "bg-orange-500/20 text-orange-400 border-orange-500/30",
-      "Real Estate": "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
-      "Government & NGO": "bg-indigo-500/20 text-indigo-400 border-indigo-500/30",
-      "Human Resources": "bg-teal-500/20 text-teal-400 border-teal-500/30",
-      "IoT & Smart Systems": "bg-cyan-500/20 text-cyan-400 border-cyan-500/30",
-      "Legal Tech": "bg-slate-500/20 text-slate-400 border-slate-500/30"
-    };
-    return colors[category as keyof typeof colors] || "bg-gray-500/20 text-gray-400 border-gray-500/30";
-  };
-
-  const getCategoryIcon = (category: string) => {
-    const icons = {
-      "Government & NGO": "🏛️",
-      "Creative & Content": "🎨",
-      "Human Resources": "👥",
-      "IoT & Smart Systems": "🔗",
-      "Legal Tech": "⚖️",
-      "SDR": "📊",
-      "Chatbot": "💬",
-      "Voice": "🎙️",
-      "Content": "📸",
-      "Ads": "🎯",
-      "Real Estate": "🏠"
-    };
-    return icons[category as keyof typeof icons] || "🤖";
-  };
-
-  const handleDeploy = (template: any) => {
-    deployAgent.mutate({
-      id: template.id.startsWith('static-') ? undefined : template.id,
-      name: template.name,
-      description: template.description,
-      configuration: template.configuration,
-      prompt_template: template.prompt_template
-    });
-  };
-
-  const handleDelete = (templateId: string) => {
-    deleteTemplate.mutate(templateId);
-  };
-
-  const renderTemplateCard = (template: any) => (
-    <Card key={template.id} className="glass-morphism border-border/40 card-hover group">
-      <CardHeader className="pb-4">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-3">
-            <div className="text-2xl">{template.icon}</div>
-            <div>
-              <CardTitle className="text-lg">{template.name}</CardTitle>
-              <div className="flex items-center gap-2 mt-1">
-                <Badge className={getCategoryColor(template.category)}>
-                  {template.category}
-                </Badge>
-                {template.popularity && (
-                  <Badge variant="outline" className="border-brand-500/30 text-brand-400">
-                    {template.popularity}
-                  </Badge>
-                )}
-              </div>
-            </div>
-          </div>
-          {template.isUserCreated && (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-300 hover:bg-red-500/10">
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Delete Template</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Are you sure you want to delete "{template.name}"? This action cannot be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={() => handleDelete(template.id)}
-                    className="bg-red-600 hover:bg-red-700"
-                  >
-                    Delete
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          )}
+  if (isLoading) {
+    return (
+      <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+        <h2 className="text-3xl font-bold tracking-tight">Agent Library</h2>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Card key={i} className="animate-pulse">
+              <CardHeader>
+                <div className="h-6 bg-muted rounded w-3/4"></div>
+                <div className="h-4 bg-muted rounded w-1/2"></div>
+              </CardHeader>
+              <CardContent>
+                <div className="h-20 bg-muted rounded"></div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
-        <CardDescription className="text-sm">{template.description}</CardDescription>
-      </CardHeader>
-      
-      <CardContent className="space-y-4">
-        <div>
-          <p className="text-sm font-medium mb-2">Key Features:</p>
-          <div className="flex flex-wrap gap-1">
-            {template.features.map((feature, index) => (
-              <Badge 
-                key={index} 
-                variant="secondary" 
-                className="text-xs bg-muted/30 border-border/40"
-              >
-                {feature}
-              </Badge>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-muted-foreground">Deployment time:</span>
-          <span className="font-medium">{template.deployment}</span>
-        </div>
-
-        <div className="flex gap-2">
-          <Button 
-            className="flex-1 btn-gradient rounded-xl group-hover:scale-[1.02] transition-all duration-200"
-            onClick={() => handleDeploy(template)}
-            disabled={deployAgent.isPending}
-          >
-            <Zap className="h-4 w-4 mr-2" />
-            {deployAgent.isPending ? 'Deploying...' : 'Deploy'}
-          </Button>
-          <Button variant="outline" size="icon" className="rounded-xl border-border/40">
-            <Play className="h-4 w-4" />
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
+      </div>
+    )
+  }
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Agent Library</h1>
-          <p className="text-muted-foreground">Deploy proven AI automation workflows or create custom agents</p>
-        </div>
-        
-        <div className="flex items-center gap-4">
-          <CreateAgentDialog />
+    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+      <div className="flex items-center justify-between space-y-2">
+        <h2 className="text-3xl font-bold tracking-tight">Agent Library</h2>
+        <div className="flex items-center space-x-2">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search agents..."
+              placeholder="Search templates..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 w-64 bg-background/50 border-border/40"
+              className="pl-8 w-64"
             />
           </div>
         </div>
       </div>
 
-      {/* User Agents Section */}
-      <UserAgentsSection />
-
-      <Separator className="my-8" />
-
-      {/* Main Content Tabs */}
-      <Tabs defaultValue="templates" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="templates" data-value="templates">Template Library</TabsTrigger>
-          <TabsTrigger value="workflows">Upload Workflows</TabsTrigger>
-          <TabsTrigger value="packages">Upload Packages</TabsTrigger>
+      <Tabs defaultValue="templates" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="templates">Template Library</TabsTrigger>
+          <TabsTrigger value="deployed">Your Agents</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="templates" className="space-y-6">
-          <div>
-            <h2 className="text-2xl font-bold mb-2">Template Library</h2>
-            <p className="text-muted-foreground">Ready-to-deploy agent templates organized by category</p>
-          </div>
+        <TabsContent value="templates" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {filteredTemplates?.map((template) => (
+              <Card key={template.id} className="glass-morphism border-border/40 card-hover group">
+                <CardHeader className="pb-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="text-2xl">🤖</div>
+                      <div>
+                        <CardTitle className="text-lg">{template.name}</CardTitle>
+                        {template.category && (
+                          <Badge variant="secondary" className="mt-1">
+                            {template.category}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    {template.rating && (
+                      <div className="flex items-center gap-1">
+                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                        <span className="text-sm font-medium">{template.rating}</span>
+                      </div>
+                    )}
+                  </div>
+                  {template.description && (
+                    <CardDescription className="text-sm">{template.description}</CardDescription>
+                  )}
+                </CardHeader>
+                
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <Users className="h-4 w-4" />
+                      {template.usage_count} deployments
+                    </div>
+                  </div>
 
-          {/* Category Filter */}
-          <div className="flex items-center gap-2 overflow-x-auto">
-            <Filter className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-            {allCategories.map((category) => (
-              <Button
-                key={category}
-                variant={selectedCategory === category ? "default" : "outline"}
-                size="sm"
-                onClick={() => setSelectedCategory(category)}
-                className={`rounded-full whitespace-nowrap transition-all duration-200 ${
-                  selectedCategory === category 
-                    ? 'bg-brand-500 hover:bg-brand-600' 
-                    : 'border-border/40 hover:bg-muted/20'
-                }`}
-              >
-                {category !== "All" && getCategoryIcon(category)} {category}
-              </Button>
+                  <Button
+                    onClick={() => handleDeploy({ id: template.id, name: template.name })}
+                    className="w-full rounded-xl btn-gradient"
+                  >
+                    <Zap className="h-4 w-4 mr-2" />
+                    Deploy Agent
+                  </Button>
+                </CardContent>
+              </Card>
             ))}
           </div>
 
-          {/* Organized Template Sections */}
-          {selectedCategory === "All" ? (
-            <div className="space-y-8">
-              {Object.entries(templatesByCategory).map(([category, categoryTemplates]) => (
-                <div key={category} className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="text-2xl">{getCategoryIcon(category)}</div>
-                    <div>
-                      <h3 className="text-xl font-semibold">{category}</h3>
-                      <p className="text-sm text-muted-foreground">{categoryTemplates.length} templates available</p>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    {categoryTemplates.map((template) => renderTemplateCard(template))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            // Single category view
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredTemplates.map((template) => renderTemplateCard(template))}
-            </div>
-          )}
-
-          {/* Empty State */}
-          {filteredTemplates.length === 0 && !templatesLoading && (
-            <div className="text-center py-12">
-              <Bot className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">No templates found</h3>
-              <p className="text-muted-foreground">Try adjusting your search or filter criteria</p>
-            </div>
+          {filteredTemplates?.length === 0 && (
+            <Card className="glass-morphism border-border/40">
+              <CardContent className="text-center py-12">
+                <Bot className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-medium mb-2">No templates found</h3>
+                <p className="text-muted-foreground">
+                  Try adjusting your search or browse all available templates
+                </p>
+              </CardContent>
+            </Card>
           )}
         </TabsContent>
 
-        <TabsContent value="workflows" className="space-y-6">
-          <div>
-            <h2 className="text-2xl font-bold mb-2">Upload n8n Workflows</h2>
-            <p className="text-muted-foreground">Upload organized folders to create structured template sections in the library</p>
-          </div>
-
-          <div className="max-w-4xl">
-            <N8nWorkflowUpload />
-          </div>
-        </TabsContent>
-
-        <TabsContent value="packages" className="space-y-6">
-          <div>
-            <h2 className="text-2xl font-bold mb-2">Agent Packages</h2>
-            <p className="text-muted-foreground">Upload and manage your n8n agent workflow packages</p>
-          </div>
-
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            <AgentPackageUpload />
-            <div className="xl:col-span-1">
-              <AgentPackagesList />
-            </div>
-          </div>
+        <TabsContent value="deployed" className="space-y-4">
+          <UserAgentsSection />
         </TabsContent>
       </Tabs>
-    </div>
-  );
-};
 
-export default AgentLibrary;
+      {selectedTemplate && (
+        <DeployAgentDialog
+          isOpen={isDeployDialogOpen}
+          onOpenChange={setIsDeployDialogOpen}
+          templateId={selectedTemplate.id}
+          templateName={selectedTemplate.name}
+        />
+      )}
+    </div>
+  )
+}
+
+export default AgentLibrary

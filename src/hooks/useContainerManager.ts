@@ -1,100 +1,54 @@
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
-import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/contexts/AuthContext'
 
-interface ContainerAction {
+interface ContainerActionParams {
+  action: 'deploy' | 'stop' | 'restart'
   workflowId: string
-  action: 'deploy' | 'stop' | 'restart' | 'status'
   credentials?: Record<string, string>
 }
 
 export const useContainerManager = () => {
-  const { toast } = useToast()
-  const queryClient = useQueryClient()
   const { user } = useAuth()
-
-  const deployContainer = useMutation({
-    mutationFn: async ({ workflowId, credentials }: { workflowId: string, credentials?: Record<string, string> }) => {
-      if (!user) throw new Error('User not authenticated')
-
-      const { data, error } = await supabase.functions.invoke('container-manager', {
-        body: {
-          action: 'deploy',
-          workflowId,
-          credentials
-        }
-      })
-
-      if (error) throw error
-      return data
-    },
-    onSuccess: () => {
-      toast({
-        title: "Container Deployment Started",
-        description: "Your dedicated n8n container is being deployed. This may take a few minutes.",
-      })
-      queryClient.invalidateQueries({ queryKey: ['container-status'] })
-      queryClient.invalidateQueries({ queryKey: ['agents'] })
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Deployment Failed",
-        description: error.message || "Failed to deploy container",
-        variant: "destructive",
-      })
-    }
-  })
-
-  const manageContainer = useMutation({
-    mutationFn: async ({ action, workflowId }: ContainerAction) => {
-      if (!user) throw new Error('User not authenticated')
-
-      const { data, error } = await supabase.functions.invoke('container-manager', {
-        body: { action, workflowId }
-      })
-
-      if (error) throw error
-      return data
-    },
-    onSuccess: (data, variables) => {
-      toast({
-        title: `Container ${variables.action}`,
-        description: `Container ${variables.action} completed successfully`,
-      })
-      queryClient.invalidateQueries({ queryKey: ['container-status'] })
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Container Action Failed",
-        description: error.message,
-        variant: "destructive",
-      })
-    }
-  })
+  const queryClient = useQueryClient()
 
   const containerStatus = useQuery({
     queryKey: ['container-status', user?.id],
     queryFn: async () => {
       if (!user) throw new Error('User not authenticated')
 
+      const { data, error } = await supabase
+        .from('user_containers')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle()
+
+      if (error) throw error
+      return { container: data }
+    },
+    enabled: !!user,
+    refetchInterval: 30000
+  })
+
+  const manageContainer = useMutation({
+    mutationFn: async (params: ContainerActionParams) => {
       const { data, error } = await supabase.functions.invoke('container-manager', {
-        body: { action: 'status', workflowId: '' }
+        body: params
       })
 
       if (error) throw error
       return data
     },
-    enabled: !!user,
-    refetchInterval: 30000 // Poll every 30 seconds
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['container-status'] })
+      queryClient.invalidateQueries({ queryKey: ['container-events'] })
+    }
   })
 
   return {
-    deployContainer,
-    manageContainer,
     containerStatus,
-    isDeploying: deployContainer.isPending,
+    manageContainer,
     isManaging: manageContainer.isPending
   }
 }

@@ -1,79 +1,69 @@
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
+import { useQuery } from '@tanstack/react-query'
+import { supabase } from '@/integrations/supabase/client'
+import { useAuth } from '@/contexts/AuthContext'
 
 export const useLeads = () => {
-  const { user } = useAuth();
-  
+  const { user } = useAuth()
+
   return useQuery({
     queryKey: ['leads', user?.id],
     queryFn: async () => {
-      if (!user) throw new Error('User not authenticated');
-      
+      if (!user) throw new Error('User not authenticated')
+
       const { data, error } = await supabase
         .from('leads')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
-        .limit(10);
-      
-      if (error) throw error;
-      return data;
+
+      if (error) throw error
+      return data
     },
-    enabled: !!user,
-  });
-};
+    enabled: !!user
+  })
+}
 
 export const useLeadStats = () => {
-  const { user } = useAuth();
-  
+  const { user } = useAuth()
+
   return useQuery({
     queryKey: ['lead-stats', user?.id],
     queryFn: async () => {
-      if (!user) throw new Error('User not authenticated');
-      
-      const today = new Date().toISOString().split('T')[0];
-      
-      // Get leads created today
-      const { data: todayLeads, error: todayError } = await supabase
-        .from('leads')
-        .select('id')
-        .eq('user_id', user.id)
-        .gte('created_at', today);
-      
-      if (todayError) throw todayError;
-      
-      // Get total leads
-      const { data: totalLeads, error: totalError } = await supabase
-        .from('leads')
-        .select('id, status')
-        .eq('user_id', user.id);
-      
-      if (totalError) throw totalError;
-      
-      // Get communications today
-      const { data: communications, error: commError } = await supabase
-        .from('communications')
-        .select('id, type')
-        .eq('user_id', user.id)
-        .gte('created_at', today);
-      
-      if (commError) throw commError;
-      
-      const convertedLeads = totalLeads?.filter(lead => lead.status === 'converted').length || 0;
-      const callsToday = communications?.filter(comm => comm.type === 'voice').length || 0;
-      const totalLeadsCount = totalLeads?.length || 0;
-      const responseRate = totalLeadsCount > 0 ? Math.round((convertedLeads / totalLeadsCount) * 100) : 0;
-      
+      if (!user) throw new Error('User not authenticated')
+
+      const today = new Date().toISOString().split('T')[0]
+
+      const [leadsToday, totalCommunications] = await Promise.all([
+        supabase
+          .from('leads')
+          .select('id')
+          .eq('user_id', user.id)
+          .gte('created_at', today)
+          .then(({ data }) => data?.length || 0),
+        
+        supabase
+          .from('communications')
+          .select('type')
+          .eq('user_id', user.id)
+          .gte('created_at', today)
+          .then(({ data }) => data || [])
+      ])
+
+      const callsPlaced = totalCommunications.filter(c => c.type === 'voice').length
+      const bookings = totalCommunications.filter(c => c.type === 'calendar').length
+      const responseRate = totalCommunications.length > 0 
+        ? Math.round((bookings / totalCommunications.length) * 100)
+        : 0
+
       return {
-        leadsToday: todayLeads?.length || 0,
-        callsPlaced: callsToday,
-        bookings: convertedLeads,
-        responseRate,
-      };
+        leadsToday,
+        callsPlaced,
+        bookings,
+        responseRate
+      }
     },
     enabled: !!user,
-  });
-};
+    refetchInterval: 60000
+  })
+}
