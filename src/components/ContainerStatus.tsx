@@ -1,4 +1,3 @@
-
 import React from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -18,7 +17,13 @@ import {
 import { useContainerManager } from '@/hooks/useContainerManager'
 
 const ContainerStatus = () => {
-  const { containerStatus, manageContainer, isManaging } = useContainerManager()
+  const { 
+    containerStatus, 
+    stopContainer, 
+    restartContainer, 
+    isStopping, 
+    isRestarting 
+  } = useContainerManager()
 
   const container = containerStatus.data?.container
   const isLoading = containerStatus.isLoading
@@ -43,11 +48,14 @@ const ContainerStatus = () => {
   }
 
   const handleContainerAction = async (action: 'stop' | 'restart') => {
-    await manageContainer.mutateAsync({
-      action,
-      workflowId: container?.container_id || ''
-    })
+    if (action === 'stop') {
+      await stopContainer.mutateAsync()
+    } else if (action === 'restart') {
+      await restartContainer.mutateAsync()
+    }
   }
+
+  const isManaging = isStopping || isRestarting
 
   if (isLoading) {
     return (
