@@ -17,37 +17,215 @@ interface Task {
 
 const MVPChecklist = () => {
   const [tasks, setTasks] = useState<Task[]>([
+    // Authentication & User Management
     {
-      id: 'credential-vault',
-      title: 'Credential Vault',
-      description: 'Securely store and manage API credentials for third-party services',
-      category: 'core',
+      id: 'auth-setup',
+      title: 'Authentication Setup',
+      description: 'Implement user registration, login, and logout functionality',
+      category: 'auth',
       priority: 'critical',
       status: 'completed',
-      estimatedHours: 10,
-      devNotes: 'Edge function with encryption and access logs'
+      estimatedHours: 6,
+      devNotes: 'Supabase Auth with email/password'
     },
     {
-      id: 'lead-management',
-      title: 'Lead Management',
-      description: 'CRUD operations for leads with user association',
-      category: 'core',
+      id: 'user-profiles',
+      title: 'User Profiles',
+      description: 'Create user profile management and settings',
+      category: 'auth',
+      priority: 'high',
+      status: 'completed',
+      estimatedHours: 4,
+      devNotes: 'Profile table with user preferences'
+    },
+    {
+      id: 'password-reset',
+      title: 'Password Reset',
+      description: 'Implement forgot/reset password functionality',
+      category: 'auth',
+      priority: 'medium',
+      status: 'pending',
+      estimatedHours: 3,
+      devNotes: 'Email-based password reset flow'
+    },
+    {
+      id: 'email-verification',
+      title: 'Email Verification',
+      description: 'Verify user email addresses during registration',
+      category: 'auth',
+      priority: 'medium',
+      status: 'pending',
+      estimatedHours: 2,
+      devNotes: 'Email confirmation before account activation'
+    },
+    {
+      id: 'session-management',
+      title: 'Session Management',
+      description: 'Handle user sessions and token refresh',
+      category: 'auth',
+      priority: 'high',
+      status: 'completed',
+      estimatedHours: 3,
+      devNotes: 'Auto-refresh tokens and session persistence'
+    },
+
+    // Core Lead Management
+    {
+      id: 'lead-crud',
+      title: 'Lead CRUD Operations',
+      description: 'Create, read, update, delete leads with full data management',
+      category: 'leads',
       priority: 'critical',
       status: 'completed',
       estimatedHours: 8,
-      devNotes: 'Supabase tables and React hooks'
+      devNotes: 'Full CRUD with validation and error handling'
     },
     {
-      id: 'communications',
-      title: 'Communications Module',
-      description: 'Send and track SMS, voice, and email communications',
-      category: 'core',
+      id: 'lead-search',
+      title: 'Lead Search & Filtering',
+      description: 'Search leads by name, email, phone, tags, and custom fields',
+      category: 'leads',
+      priority: 'high',
+      status: 'pending',
+      estimatedHours: 5,
+      devNotes: 'Full-text search with filters and sorting'
+    },
+    {
+      id: 'lead-import',
+      title: 'Lead Import/Export',
+      description: 'Bulk import leads from CSV and export lead data',
+      category: 'leads',
+      priority: 'medium',
+      status: 'pending',
+      estimatedHours: 6,
+      devNotes: 'CSV parsing with validation and error reporting'
+    },
+    {
+      id: 'lead-tags',
+      title: 'Lead Tags & Categories',
+      description: 'Tag system for organizing and categorizing leads',
+      category: 'leads',
+      priority: 'medium',
+      status: 'pending',
+      estimatedHours: 4,
+      devNotes: 'Tag management with autocomplete'
+    },
+    {
+      id: 'lead-notes',
+      title: 'Lead Notes & History',
+      description: 'Add notes and track interaction history for each lead',
+      category: 'leads',
+      priority: 'high',
+      status: 'pending',
+      estimatedHours: 5,
+      devNotes: 'Timeline view with rich text notes'
+    },
+
+    // Communications
+    {
+      id: 'sms-integration',
+      title: 'SMS Integration',
+      description: 'Send and receive SMS messages through Twilio',
+      category: 'communications',
+      priority: 'critical',
+      status: 'completed',
+      estimatedHours: 6,
+      devNotes: 'Twilio SMS with delivery status tracking'
+    },
+    {
+      id: 'voice-calls',
+      title: 'Voice Call Integration',
+      description: 'Make and receive voice calls through Twilio',
+      category: 'communications',
       priority: 'high',
       status: 'completed',
-      dependencies: ['credential-vault', 'lead-management'],
-      estimatedHours: 12,
-      devNotes: 'Integrate with Twilio and email services'
+      estimatedHours: 8,
+      devNotes: 'Voice calling with call recording'
     },
+    {
+      id: 'email-integration',
+      title: 'Email Integration',
+      description: 'Send and track email communications',
+      category: 'communications',
+      priority: 'high',
+      status: 'pending',
+      estimatedHours: 7,
+      devNotes: 'SMTP integration with open/click tracking'
+    },
+    {
+      id: 'message-templates',
+      title: 'Message Templates',
+      description: 'Create reusable templates for SMS, email, and voice messages',
+      category: 'communications',
+      priority: 'medium',
+      status: 'pending',
+      estimatedHours: 4,
+      devNotes: 'Template engine with variable substitution'
+    },
+    {
+      id: 'communication-history',
+      title: 'Communication History',
+      description: 'Track all communications with leads in a unified timeline',
+      category: 'communications',
+      priority: 'high',
+      status: 'pending',
+      estimatedHours: 6,
+      devNotes: 'Unified timeline with all communication types'
+    },
+
+    // Automation Engine
+    {
+      id: 'automation-rules',
+      title: 'Automation Rules Engine',
+      description: 'Create and manage automation workflows for lead follow-up',
+      category: 'automation',
+      priority: 'critical',
+      status: 'completed',
+      estimatedHours: 12,
+      devNotes: 'Rule builder with triggers and actions'
+    },
+    {
+      id: 'trigger-system',
+      title: 'Trigger System',
+      description: 'Define triggers for automation rules (time-based, event-based)',
+      category: 'automation',
+      priority: 'high',
+      status: 'pending',
+      estimatedHours: 8,
+      devNotes: 'Cron-based and webhook triggers'
+    },
+    {
+      id: 'action-system',
+      title: 'Action System',
+      description: 'Define actions for automation rules (send message, update lead, etc.)',
+      category: 'automation',
+      priority: 'high',
+      status: 'pending',
+      estimatedHours: 6,
+      devNotes: 'Pluggable action system'
+    },
+    {
+      id: 'automation-logs',
+      title: 'Automation Execution Logs',
+      description: 'Track and log all automation rule executions',
+      category: 'automation',
+      priority: 'medium',
+      status: 'pending',
+      estimatedHours: 4,
+      devNotes: 'Execution history with success/failure tracking'
+    },
+    {
+      id: 'automation-testing',
+      title: 'Automation Testing',
+      description: 'Test automation rules before activating them',
+      category: 'automation',
+      priority: 'medium',
+      status: 'pending',
+      estimatedHours: 5,
+      devNotes: 'Dry-run mode for rule testing'
+    },
+
+    // Integrations
     {
       id: 'meta-api',
       title: 'Meta Business API Integration',
@@ -55,90 +233,536 @@ const MVPChecklist = () => {
       category: 'integrations',
       priority: 'critical',
       status: 'completed',
-      dependencies: ['credential-vault'],
-      estimatedHours: 8,
-      devNotes: 'Edge function with credential management and real-time lead sync'
-    },
-    {
-      id: 'twilio-integration',
-      title: 'Twilio SMS/Voice Integration',
-      description: 'Enable SMS and voice calling through Twilio API',
-      category: 'integrations',
-      priority: 'critical',
-      status: 'completed',
-      dependencies: ['credential-vault'],
-      estimatedHours: 6,
-      devNotes: 'Edge function with user credentials, SMS and voice call capabilities'
-    },
-    {
-      id: 'ui-components',
-      title: 'UI Components',
-      description: 'Reusable UI components for forms, buttons, cards, and notifications',
-      category: 'ui',
-      priority: 'medium',
-      status: 'completed',
-      estimatedHours: 5,
-      devNotes: 'Radix UI and Tailwind CSS based'
-    },
-    {
-      id: 'automation-rules',
-      title: 'Automation Rules Engine',
-      description: 'Create and manage automation workflows for lead follow-up',
-      category: 'features',
-      priority: 'high',
-      status: 'completed',
-      dependencies: ['communications', 'lead-management'],
       estimatedHours: 10,
-      devNotes: 'Rule builder with triggers and actions'
+      devNotes: 'Real-time lead sync with webhook support'
     },
     {
-      id: 'reporting-dashboard',
-      title: 'Reporting Dashboard',
-      description: 'Visualize lead and communication metrics',
-      category: 'features',
+      id: 'google-ads',
+      title: 'Google Ads Integration',
+      description: 'Fetch leads from Google Ads campaigns',
+      category: 'integrations',
+      priority: 'high',
+      status: 'pending',
+      estimatedHours: 8,
+      devNotes: 'Google Ads API integration'
+    },
+    {
+      id: 'linkedin-ads',
+      title: 'LinkedIn Ads Integration',
+      description: 'Import leads from LinkedIn advertising campaigns',
+      category: 'integrations',
       priority: 'medium',
       status: 'pending',
-      dependencies: ['lead-management', 'communications'],
       estimatedHours: 7,
-      devNotes: 'Charts and data summaries'
+      devNotes: 'LinkedIn Marketing API'
+    },
+    {
+      id: 'webhook-endpoints',
+      title: 'Webhook Endpoints',
+      description: 'Create webhook endpoints for receiving leads from various sources',
+      category: 'integrations',
+      priority: 'high',
+      status: 'pending',
+      estimatedHours: 5,
+      devNotes: 'Generic webhook handler with authentication'
+    },
+    {
+      id: 'zapier-integration',
+      title: 'Zapier Integration',
+      description: 'Connect with Zapier for third-party app integrations',
+      category: 'integrations',
+      priority: 'low',
+      status: 'pending',
+      estimatedHours: 6,
+      devNotes: 'Zapier webhook triggers and actions'
+    },
+
+    // UI/UX Components
+    {
+      id: 'dashboard-ui',
+      title: 'Main Dashboard UI',
+      description: 'Create the main dashboard with key metrics and quick actions',
+      category: 'ui',
+      priority: 'critical',
+      status: 'completed',
+      estimatedHours: 8,
+      devNotes: 'Responsive dashboard with charts'
+    },
+    {
+      id: 'lead-management-ui',
+      title: 'Lead Management Interface',
+      description: 'UI for viewing, editing, and managing leads',
+      category: 'ui',
+      priority: 'critical',
+      status: 'completed',
+      estimatedHours: 10,
+      devNotes: 'Table view with inline editing'
+    },
+    {
+      id: 'communication-ui',
+      title: 'Communication Interface',
+      description: 'UI for sending messages and viewing communication history',
+      category: 'ui',
+      priority: 'high',
+      status: 'pending',
+      estimatedHours: 8,
+      devNotes: 'Chat-like interface with templates'
+    },
+    {
+      id: 'automation-builder-ui',
+      title: 'Automation Rule Builder UI',
+      description: 'Visual interface for creating and editing automation rules',
+      category: 'ui',
+      priority: 'high',
+      status: 'pending',
+      estimatedHours: 12,
+      devNotes: 'Drag-and-drop rule builder'
+    },
+    {
+      id: 'mobile-responsive',
+      title: 'Mobile Responsive Design',
+      description: 'Ensure all interfaces work well on mobile devices',
+      category: 'ui',
+      priority: 'medium',
+      status: 'pending',
+      estimatedHours: 6,
+      devNotes: 'Mobile-first responsive design'
+    },
+
+    // Security & Credentials
+    {
+      id: 'credential-vault',
+      title: 'Credential Vault',
+      description: 'Securely store and manage API credentials for third-party services',
+      category: 'security',
+      priority: 'critical',
+      status: 'completed',
+      estimatedHours: 8,
+      devNotes: 'Encrypted credential storage with access logs'
+    },
+    {
+      id: 'access-control',
+      title: 'Role-Based Access Control',
+      description: 'Implement user roles and permissions system',
+      category: 'security',
+      priority: 'medium',
+      status: 'pending',
+      estimatedHours: 8,
+      devNotes: 'Admin, manager, agent roles with permissions'
+    },
+    {
+      id: 'audit-logs',
+      title: 'Audit Logging',
+      description: 'Log all user actions for security and compliance',
+      category: 'security',
+      priority: 'medium',
+      status: 'pending',
+      estimatedHours: 4,
+      devNotes: 'Comprehensive audit trail'
+    },
+    {
+      id: 'data-encryption',
+      title: 'Data Encryption',
+      description: 'Encrypt sensitive data at rest and in transit',
+      category: 'security',
+      priority: 'high',
+      status: 'pending',
+      estimatedHours: 6,
+      devNotes: 'AES encryption for PII data'
+    },
+    {
+      id: 'api-security',
+      title: 'API Security',
+      description: 'Implement API authentication, rate limiting, and security headers',
+      category: 'security',
+      priority: 'high',
+      status: 'pending',
+      estimatedHours: 5,
+      devNotes: 'JWT tokens with rate limiting'
+    },
+
+    // Analytics & Reporting
+    {
+      id: 'lead-analytics',
+      title: 'Lead Analytics Dashboard',
+      description: 'Analytics for lead sources, conversion rates, and performance',
+      category: 'analytics',
+      priority: 'medium',
+      status: 'pending',
+      estimatedHours: 8,
+      devNotes: 'Charts showing lead funnel metrics'
+    },
+    {
+      id: 'communication-analytics',
+      title: 'Communication Analytics',
+      description: 'Track message delivery rates, response rates, and engagement',
+      category: 'analytics',
+      priority: 'medium',
+      status: 'pending',
+      estimatedHours: 6,
+      devNotes: 'Communication effectiveness metrics'
+    },
+    {
+      id: 'automation-analytics',
+      title: 'Automation Performance',
+      description: 'Analytics for automation rule performance and effectiveness',
+      category: 'analytics',
+      priority: 'low',
+      status: 'pending',
+      estimatedHours: 5,
+      devNotes: 'Rule execution success rates and impact'
+    },
+    {
+      id: 'custom-reports',
+      title: 'Custom Report Builder',
+      description: 'Allow users to create custom reports and dashboards',
+      category: 'analytics',
+      priority: 'low',
+      status: 'pending',
+      estimatedHours: 10,
+      devNotes: 'Drag-and-drop report builder'
+    },
+    {
+      id: 'export-reports',
+      title: 'Report Export',
+      description: 'Export reports to PDF, CSV, and Excel formats',
+      category: 'analytics',
+      priority: 'low',
+      status: 'pending',
+      estimatedHours: 4,
+      devNotes: 'Multiple export format support'
+    },
+
+    // Performance & Scalability
+    {
+      id: 'database-optimization',
+      title: 'Database Optimization',
+      description: 'Optimize database queries and add proper indexing',
+      category: 'performance',
+      priority: 'medium',
+      status: 'pending',
+      estimatedHours: 6,
+      devNotes: 'Query optimization and index creation'
+    },
+    {
+      id: 'caching-layer',
+      title: 'Caching Implementation',
+      description: 'Implement caching for frequently accessed data',
+      category: 'performance',
+      priority: 'medium',
+      status: 'pending',
+      estimatedHours: 5,
+      devNotes: 'Redis caching for API responses'
+    },
+    {
+      id: 'api-pagination',
+      title: 'API Pagination',
+      description: 'Implement pagination for large data sets',
+      category: 'performance',
+      priority: 'high',
+      status: 'pending',
+      estimatedHours: 3,
+      devNotes: 'Cursor-based pagination'
+    },
+    {
+      id: 'background-jobs',
+      title: 'Background Job Processing',
+      description: 'Process heavy tasks in background workers',
+      category: 'performance',
+      priority: 'medium',
+      status: 'pending',
+      estimatedHours: 7,
+      devNotes: 'Queue system for async processing'
+    },
+    {
+      id: 'cdn-setup',
+      title: 'CDN Implementation',
+      description: 'Set up CDN for static assets and global content delivery',
+      category: 'performance',
+      priority: 'low',
+      status: 'pending',
+      estimatedHours: 3,
+      devNotes: 'CloudFront or similar CDN setup'
+    },
+
+    // Testing & Quality Assurance
+    {
+      id: 'unit-tests',
+      title: 'Unit Testing',
+      description: 'Write unit tests for all core business logic',
+      category: 'testing',
+      priority: 'medium',
+      status: 'pending',
+      estimatedHours: 12,
+      devNotes: 'Jest/Vitest unit tests with good coverage'
+    },
+    {
+      id: 'integration-tests',
+      title: 'Integration Testing',
+      description: 'Test API endpoints and database interactions',
+      category: 'testing',
+      priority: 'medium',
+      status: 'pending',
+      estimatedHours: 8,
+      devNotes: 'API testing with test database'
+    },
+    {
+      id: 'e2e-tests',
+      title: 'End-to-End Testing',
+      description: 'Test complete user workflows and critical paths',
+      category: 'testing',
+      priority: 'low',
+      status: 'pending',
+      estimatedHours: 10,
+      devNotes: 'Playwright or Cypress E2E tests'
+    },
+    {
+      id: 'load-testing',
+      title: 'Load Testing',
+      description: 'Test system performance under expected load',
+      category: 'testing',
+      priority: 'low',
+      status: 'pending',
+      estimatedHours: 5,
+      devNotes: 'Load testing with realistic traffic patterns'
+    },
+    {
+      id: 'security-testing',
+      title: 'Security Testing',
+      description: 'Perform security audits and penetration testing',
+      category: 'testing',
+      priority: 'medium',
+      status: 'pending',
+      estimatedHours: 6,
+      devNotes: 'OWASP security testing guidelines'
+    },
+
+    // Deployment & DevOps
+    {
+      id: 'ci-cd-pipeline',
+      title: 'CI/CD Pipeline',
+      description: 'Set up automated testing and deployment pipeline',
+      category: 'devops',
+      priority: 'medium',
+      status: 'pending',
+      estimatedHours: 8,
+      devNotes: 'GitHub Actions or similar CI/CD'
+    },
+    {
+      id: 'environment-setup',
+      title: 'Environment Configuration',
+      description: 'Set up development, staging, and production environments',
+      category: 'devops',
+      priority: 'high',
+      status: 'pending',
+      estimatedHours: 6,
+      devNotes: 'Environment-specific configs and secrets'
+    },
+    {
+      id: 'monitoring-setup',
+      title: 'Application Monitoring',
+      description: 'Set up error tracking, performance monitoring, and alerting',
+      category: 'devops',
+      priority: 'medium',
+      status: 'pending',
+      estimatedHours: 5,
+      devNotes: 'Sentry or similar monitoring tools'
+    },
+    {
+      id: 'backup-strategy',
+      title: 'Backup & Recovery',
+      description: 'Implement automated backups and disaster recovery procedures',
+      category: 'devops',
+      priority: 'medium',
+      status: 'pending',
+      estimatedHours: 4,
+      devNotes: 'Automated database backups with point-in-time recovery'
+    },
+    {
+      id: 'log-management',
+      title: 'Log Management',
+      description: 'Centralized logging and log analysis setup',
+      category: 'devops',
+      priority: 'low',
+      status: 'pending',
+      estimatedHours: 4,
+      devNotes: 'Structured logging with centralized collection'
+    },
+
+    // Documentation & Training
+    {
+      id: 'api-documentation',
+      title: 'API Documentation',
+      description: 'Comprehensive API documentation with examples',
+      category: 'documentation',
+      priority: 'medium',
+      status: 'pending',
+      estimatedHours: 6,
+      devNotes: 'OpenAPI/Swagger documentation'
+    },
+    {
+      id: 'user-documentation',
+      title: 'User Documentation',
+      description: 'End-user guides and help documentation',
+      category: 'documentation',
+      priority: 'medium',
+      status: 'pending',
+      estimatedHours: 8,
+      devNotes: 'In-app help and external documentation site'
+    },
+    {
+      id: 'admin-documentation',
+      title: 'Admin Documentation',
+      description: 'System administration and configuration guides',
+      category: 'documentation',
+      priority: 'low',
+      status: 'pending',
+      estimatedHours: 4,
+      devNotes: 'Setup and configuration documentation'
+    },
+    {
+      id: 'video-tutorials',
+      title: 'Video Tutorials',
+      description: 'Create video tutorials for key features',
+      category: 'documentation',
+      priority: 'low',
+      status: 'pending',
+      estimatedHours: 10,
+      devNotes: 'Screen recordings with voiceover'
+    },
+    {
+      id: 'onboarding-flow',
+      title: 'User Onboarding',
+      description: 'Interactive onboarding flow for new users',
+      category: 'documentation',
+      priority: 'medium',
+      status: 'pending',
+      estimatedHours: 6,
+      devNotes: 'Step-by-step guided tour'
     }
   ])
 
+  const getStatusColor = (status: TaskStatus) => {
+    switch (status) {
+      case 'completed':
+        return 'bg-green-100 text-green-800'
+      case 'in-progress':
+        return 'bg-yellow-100 text-yellow-800'
+      default:
+        return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'critical':
+        return 'bg-red-100 text-red-800'
+      case 'high':
+        return 'bg-orange-100 text-orange-800'
+      case 'medium':
+        return 'bg-blue-100 text-blue-800'
+      default:
+        return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const categoryStats = tasks.reduce((acc, task) => {
+    if (!acc[task.category]) {
+      acc[task.category] = { total: 0, completed: 0 }
+    }
+    acc[task.category].total++
+    if (task.status === 'completed') {
+      acc[task.category].completed++
+    }
+    return acc
+  }, {} as Record<string, { total: number; completed: number }>)
+
+  const totalTasks = tasks.length
+  const completedTasks = tasks.filter(task => task.status === 'completed').length
+  const overallProgress = Math.round((completedTasks / totalTasks) * 100)
+
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6">MVP Development Checklist</h1>
-      <ul className="space-y-4">
-        {tasks.map(task => (
-          <li key={task.id} className="border rounded p-4">
-            <div className="flex justify-between items-center mb-2">
-              <h2 className="text-xl font-semibold">{task.title}</h2>
-              <span
-                className={`px-2 py-1 rounded text-sm font-medium ${
-                  task.status === 'completed'
-                    ? 'bg-green-100 text-green-800'
-                    : task.status === 'in-progress'
-                    ? 'bg-yellow-100 text-yellow-800'
-                    : 'bg-gray-100 text-gray-800'
-                }`}
-              >
-                {task.status.charAt(0).toUpperCase() + task.status.slice(1)}
-              </span>
+    <div className="max-w-6xl mx-auto p-6">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-4">MVP Development Checklist</h1>
+        <div className="bg-white rounded-lg border p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold">Overall Progress</h2>
+            <span className="text-2xl font-bold text-green-600">{overallProgress}%</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-3 mb-4">
+            <div 
+              className="bg-green-600 h-3 rounded-full transition-all duration-300" 
+              style={{ width: `${overallProgress}%` }}
+            ></div>
+          </div>
+          <p className="text-gray-600">{completedTasks} of {totalTasks} tasks completed</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+          {Object.entries(categoryStats).map(([category, stats]) => (
+            <div key={category} className="bg-white rounded-lg border p-4">
+              <h3 className="font-semibold capitalize mb-2">{category}</h3>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">{stats.completed}/{stats.total}</span>
+                <span className="text-sm font-medium">
+                  {Math.round((stats.completed / stats.total) * 100)}%
+                </span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                <div 
+                  className="bg-blue-600 h-2 rounded-full" 
+                  style={{ width: `${(stats.completed / stats.total) * 100}%` }}
+                ></div>
+              </div>
             </div>
-            <p className="text-muted-foreground mb-1">{task.description}</p>
-            <p className="text-xs text-muted-foreground mb-1">
-              Category: {task.category} | Priority: {task.priority} | Estimated Hours: {task.estimatedHours ?? 'N/A'}
-            </p>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        {tasks.map(task => (
+          <div key={task.id} className="bg-white border rounded-lg p-4 hover:shadow-md transition-shadow">
+            <div className="flex justify-between items-start mb-3">
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold mb-1">{task.title}</h3>
+                <p className="text-gray-600 text-sm mb-2">{task.description}</p>
+              </div>
+              <div className="flex gap-2 ml-4">
+                <span className={`px-2 py-1 rounded text-xs font-medium ${getPriorityColor(task.priority)}`}>
+                  {task.priority}
+                </span>
+                <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(task.status)}`}>
+                  {task.status.replace('-', ' ')}
+                </span>
+              </div>
+            </div>
+            
+            <div className="flex flex-wrap gap-4 text-xs text-gray-500 mb-2">
+              <span className="bg-gray-100 px-2 py-1 rounded">
+                Category: {task.category}
+              </span>
+              {task.estimatedHours && (
+                <span className="bg-gray-100 px-2 py-1 rounded">
+                  Est: {task.estimatedHours}h
+                </span>
+              )}
+            </div>
+
             {task.dependencies && task.dependencies.length > 0 && (
-              <p className="text-xs text-muted-foreground mb-1">
-                Depends on: {task.dependencies.join(', ')}
-              </p>
+              <div className="text-xs text-gray-500 mb-2">
+                <span className="font-medium">Depends on:</span> {task.dependencies.join(', ')}
+              </div>
             )}
+
             {task.devNotes && (
-              <p className="text-xs italic text-muted-foreground">Notes: {task.devNotes}</p>
+              <div className="text-xs italic text-gray-500 bg-gray-50 p-2 rounded">
+                <span className="font-medium">Notes:</span> {task.devNotes}
+              </div>
             )}
-          </li>
+          </div>
         ))}
-      </ul>
+      </div>
     </div>
   )
 }
