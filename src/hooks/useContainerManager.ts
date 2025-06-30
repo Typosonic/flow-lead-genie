@@ -2,15 +2,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/contexts/AuthContext'
-
-interface ContainerActionParams {
-  action: 'deploy' | 'stop' | 'restart'
-  workflowId: string
-  credentials?: Record<string, string>
-}
+import { useToast } from '@/hooks/use-toast'
 
 export const useContainerManager = () => {
   const { user } = useAuth()
+  const { toast } = useToast()
   const queryClient = useQueryClient()
 
   const containerStatus = useQuery({
@@ -22,19 +18,20 @@ export const useContainerManager = () => {
         .from('user_containers')
         .select('*')
         .eq('user_id', user.id)
-        .maybeSingle()
+        .single()
 
-      if (error) throw error
+      if (error && error.code !== 'PGRST116') throw error
       return { container: data }
     },
-    enabled: !!user,
-    refetchInterval: 30000
+    enabled: !!user
   })
 
   const manageContainer = useMutation({
-    mutationFn: async (params: ContainerActionParams) => {
+    mutationFn: async ({ action, workflowId }: { action: 'stop' | 'restart'; workflowId: string }) => {
+      if (!user) throw new Error('User not authenticated')
+
       const { data, error } = await supabase.functions.invoke('container-manager', {
-        body: params
+        body: { action, workflowId, userId: user.id }
       })
 
       if (error) throw error
@@ -42,7 +39,17 @@ export const useContainerManager = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['container-status'] })
-      queryClient.invalidateQueries({ queryKey: ['container-events'] })
+      toast({
+        title: "Container action completed",
+        description: "Container operation was successful.",
+      })
+    },
+    onError: (error) => {
+      toast({
+        title: "Container action failed",
+        description: error.message,
+        variant: "destructive",
+      })
     }
   })
 

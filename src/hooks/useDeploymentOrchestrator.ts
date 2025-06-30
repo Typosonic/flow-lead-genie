@@ -1,111 +1,104 @@
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
-import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/contexts/AuthContext'
+import { useToast } from '@/hooks/use-toast'
 
-interface DeploymentRequest {
+interface DeploymentParams {
   agentId: string
-  templateId?: string
-  workflowData?: any
+  configuration?: Record<string, any>
   credentials?: Record<string, string>
 }
 
 export const useDeploymentOrchestrator = () => {
+  const { user } = useAuth()
   const { toast } = useToast()
   const queryClient = useQueryClient()
-  const { user } = useAuth()
 
   const deployAgent = useMutation({
-    mutationFn: async ({ agentId, templateId, workflowData, credentials }: DeploymentRequest) => {
+    mutationFn: async (params: DeploymentParams) => {
       if (!user) throw new Error('User not authenticated')
 
-      // First, ensure user has a container
-      const { data: containerData } = await supabase.functions.invoke('container-manager', {
-        body: { action: 'status', workflowId: '' }
-      })
+      console.log('Starting agent deployment:', params)
 
-      if (!containerData.container || containerData.container.status !== 'running') {
-        // Deploy container first
-        await supabase.functions.invoke('container-manager', {
-          body: { 
-            action: 'deploy', 
-            workflowId: agentId,
-            credentials 
-          }
-        })
+      // Get the agent details
+      const { data: agent, error: agentError } = await supabase
+        .from('agents')
+        .select('*')
+        .eq('id', params.agentId)
+        .eq('user_id', user.id)
+        .single()
+
+      if (agentError) throw agentError
+
+      // Create or get user container
+      let { data: container, error: containerError } = await supabase
+        .from('user_containers')
+        .select('*')
+        .eq('user_id', user.id)
+        .single()
+
+      if (containerError && containerError.code === 'PGRST116') {
+        // No container exists, create one
+        const { data: newContainer, error: createError } = await supabase
+          .from('user_containers')
+          .insert({
+            user_id: user.id,
+            container_id: `container-${user.id}-${Date.now()}`,
+            status: 'provisioning'
+          })
+          .select()
+          .single()
+
+        if (createError) throw createError
+        container = newContainer
+      } else if (containerError) {
+        throw containerError
       }
 
-      // Log deployment in deployment_logs table
-      const { data, error } = await supabase
-        .from('deployment_logs')
-        .insert({
-          user_id: user.id,
-          agent_id: agentId,
-          template_id: templateId,
-          container_id: containerData.container?.container_id || `temp-${Date.now()}`,
-          status: 'deploying',
-          metadata: {
-            workflow_data: workflowData,
-            timestamp: new Date().toISOString()
-          }
-        })
-        .select()
-        .single()
+      // Deploy via edge function
+      const { data, error } = await supabase.functions.invoke('workflow-deployer', {
+        body: {
+          agentId: params.agentId,
+          agentName: agent.name,
+          configuration: params.configuration || agent.configuration,
+          credentials: params.credentials,
+          containerId: container.container_id
+        }
+      })
 
       if (error) throw error
 
-      // Update agent status to active
+      // Update agent status
       await supabase
         .from('agents')
         .update({ status: 'active' })
-        .eq('id', agentId)
+        .eq('id', params.agentId)
 
-      return data
+      return { agent, container, deployment: data }
     },
-    onSuccess: () => {
-      toast({
-        title: "Agent Deployment Started",
-        description: "Your agent is being deployed to your dedicated container.",
-      })
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['agents'] })
-      queryClient.invalidateQueries({ queryKey: ['deployment-logs'] })
       queryClient.invalidateQueries({ queryKey: ['container-status'] })
-    },
-    onError: (error: any) => {
+      queryClient.invalidateQueries({ queryKey: ['deployment-logs'] })
+      
       toast({
-        title: "Deployment Failed",
-        description: error.message || "Failed to deploy agent",
+        title: "Agent deployed successfully",
+        description: `${data.agent.name} is now active and processing leads.`,
+      })
+    },
+    onError: (error) => {
+      console.error('Deployment failed:', error)
+      toast({
+        title: "Deployment failed",
+        description: error.message,
         variant: "destructive",
       })
     }
   })
 
-  const deploymentLogs = useQuery({
-    queryKey: ['deployment-logs', user?.id],
-    queryFn: async () => {
-      if (!user) throw new Error('User not authenticated')
-
-      const { data, error } = await supabase
-        .from('deployment_logs')
-        .select(`
-          *,
-          agents (name),
-          agent_templates (name)
-        `)
-        .eq('user_id', user.id)
-        .order('deployment_time', { ascending: false })
-        .limit(10)
-
-      if (error) throw error
-      return data
-    },
-    enabled: !!user
-  })
-
   return {
     deployAgent,
-    deploymentLogs,
     isDeploying: deployAgent.isPending
   }
 }

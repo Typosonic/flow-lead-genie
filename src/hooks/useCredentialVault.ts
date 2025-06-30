@@ -1,45 +1,63 @@
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
-import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/contexts/AuthContext'
-
-interface CredentialOperation {
-  service: string
-  credentials?: Record<string, string>
-  action: 'store' | 'retrieve' | 'delete' | 'list'
-}
+import { useToast } from '@/hooks/use-toast'
 
 export const useCredentialVault = () => {
+  const { user } = useAuth()
   const { toast } = useToast()
   const queryClient = useQueryClient()
-  const { user } = useAuth()
+
+  const credentials = useQuery({
+    queryKey: ['user-credentials', user?.id],
+    queryFn: async () => {
+      if (!user) throw new Error('User not authenticated')
+
+      const { data, error } = await supabase
+        .from('user_credentials')
+        .select('id, service_name, created_at, updated_at')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      return data
+    },
+    enabled: !!user
+  })
 
   const storeCredentials = useMutation({
-    mutationFn: async ({ service, credentials }: { service: string, credentials: Record<string, string> }) => {
+    mutationFn: async ({ serviceName, credentials }: { 
+      serviceName: string
+      credentials: Record<string, string>
+    }) => {
       if (!user) throw new Error('User not authenticated')
+
+      console.log('Storing credentials for service:', serviceName)
 
       const { data, error } = await supabase.functions.invoke('credential-vault', {
         body: {
-          service,
+          action: 'store',
+          serviceName,
           credentials,
-          action: 'store'
+          userId: user.id
         }
       })
 
       if (error) throw error
       return data
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['user-credentials'] })
       toast({
-        title: "Credentials Stored",
-        description: "Your API credentials have been securely stored.",
+        title: "Credentials stored",
+        description: `${variables.serviceName} credentials have been securely stored.`,
       })
-      queryClient.invalidateQueries({ queryKey: ['user-services'] })
     },
-    onError: (error: any) => {
+    onError: (error) => {
+      console.error('Failed to store credentials:', error)
       toast({
-        title: "Failed to Store Credentials",
+        title: "Failed to store credentials",
         description: error.message,
         variant: "destructive",
       })
@@ -47,13 +65,14 @@ export const useCredentialVault = () => {
   })
 
   const retrieveCredentials = useMutation({
-    mutationFn: async ({ service }: { service: string }) => {
+    mutationFn: async (serviceName: string) => {
       if (!user) throw new Error('User not authenticated')
 
       const { data, error } = await supabase.functions.invoke('credential-vault', {
         body: {
-          service,
-          action: 'retrieve'
+          action: 'retrieve',
+          serviceName,
+          userId: user.id
         }
       })
 
@@ -63,48 +82,41 @@ export const useCredentialVault = () => {
   })
 
   const deleteCredentials = useMutation({
-    mutationFn: async ({ service }: { service: string }) => {
+    mutationFn: async (serviceName: string) => {
       if (!user) throw new Error('User not authenticated')
 
       const { data, error } = await supabase.functions.invoke('credential-vault', {
         body: {
-          service,
-          action: 'delete'
+          action: 'delete',
+          serviceName,
+          userId: user.id
         }
       })
 
       if (error) throw error
       return data
     },
-    onSuccess: () => {
+    onSuccess: (data, serviceName) => {
+      queryClient.invalidateQueries({ queryKey: ['user-credentials'] })
       toast({
-        title: "Credentials Deleted",
-        description: "API credentials have been removed from your vault.",
+        title: "Credentials deleted",
+        description: `${serviceName} credentials have been removed.`,
       })
-      queryClient.invalidateQueries({ queryKey: ['user-services'] })
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to delete credentials",
+        description: error.message,
+        variant: "destructive",
+      })
     }
   })
 
-  const userServices = useQuery({
-    queryKey: ['user-services', user?.id],
-    queryFn: async () => {
-      if (!user) throw new Error('User not authenticated')
-
-      const { data, error } = await supabase.functions.invoke('credential-vault', {
-        body: { action: 'list', service: '' }
-      })
-
-      if (error) throw error
-      return data
-    },
-    enabled: !!user
-  })
-
   return {
+    credentials,
     storeCredentials,
     retrieveCredentials,
     deleteCredentials,
-    userServices,
     isStoring: storeCredentials.isPending,
     isRetrieving: retrieveCredentials.isPending,
     isDeleting: deleteCredentials.isPending
