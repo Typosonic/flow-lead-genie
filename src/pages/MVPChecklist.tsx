@@ -20,6 +20,65 @@ interface ChecklistItem {
 
 const MVPChecklist = () => {
   const [items, setItems] = useState<ChecklistItem[]>([
+    // Infrastructure & Architecture (NEW SECTION)
+    {
+      id: "infrastructure-architecture",
+      title: "Scalable Infrastructure Architecture Design",
+      description: "Design multi-tenant architecture with containerized n8n, Edge Functions, and auto-scaling",
+      status: "critical",
+      category: "Infrastructure",
+      estimatedHours: 12,
+      resources: [
+        { name: "Supabase Edge Functions", url: "https://supabase.com/docs/guides/functions" },
+        { name: "Google Cloud Run", url: "https://cloud.google.com/run" }
+      ]
+    },
+    {
+      id: "container-orchestration",
+      title: "Container Orchestration Setup",
+      description: "Set up Google Cloud Run for auto-scaling n8n instances per tenant",
+      status: "critical",
+      category: "Infrastructure",
+      estimatedHours: 16,
+      dependencies: ["infrastructure-architecture"]
+    },
+    {
+      id: "credential-vault",
+      title: "Centralized Credential Management",
+      description: "Implement secure API key storage and injection system using Supabase Vault",
+      status: "critical",
+      category: "Infrastructure",
+      estimatedHours: 10,
+      dependencies: ["infrastructure-architecture"]
+    },
+    {
+      id: "workflow-deployment-pipeline",
+      title: "Dynamic Workflow Deployment Pipeline",
+      description: "Build system for deploying pre-built n8n workflows to dedicated user containers",
+      status: "todo",
+      category: "Infrastructure",
+      estimatedHours: 20,
+      dependencies: ["container-orchestration", "credential-vault"]
+    },
+    {
+      id: "multi-tenant-isolation",
+      title: "Multi-Tenant Security Isolation",
+      description: "Implement secure tenant isolation with dedicated containers and credential injection",
+      status: "todo",
+      category: "Infrastructure",
+      estimatedHours: 14,
+      dependencies: ["container-orchestration", "credential-vault"]
+    },
+    {
+      id: "auto-scaling-policies",
+      title: "Auto-Scaling & Performance Optimization",
+      description: "Configure auto-scaling policies and performance monitoring for container instances",
+      status: "todo",
+      category: "Infrastructure",
+      estimatedHours: 12,
+      dependencies: ["container-orchestration"]
+    },
+
     // Authentication & User Management
     {
       id: "auth-setup",
@@ -54,6 +113,213 @@ const MVPChecklist = () => {
     // Database & Backend
     {
       id: "database-schema",
+      title: "Scalable Database Schema Design",
+      description: "Create partitioned tables for users, agents, leads, subscriptions with performance optimization",
+      status: "critical",
+      category: "Backend",
+      estimatedHours: 8,
+      resources: [
+        { name: "Supabase Database", url: "https://supabase.com/docs/guides/database" }
+      ]
+    },
+    {
+      id: "rls-policies",
+      title: "Row Level Security Policies",
+      description: "Implement secure RLS policies for all tables with multi-tenant isolation",
+      status: "todo",
+      category: "Backend",
+      estimatedHours: 6,
+      dependencies: ["database-schema"]
+    },
+    {
+      id: "api-functions",
+      title: "Supabase Edge Functions",
+      description: "Create functions for agent deployment, lead processing, and external API integrations",
+      status: "todo",
+      category: "Backend",
+      estimatedHours: 20,
+      dependencies: ["database-schema", "credential-vault"]
+    },
+    {
+      id: "database-optimization",
+      title: "Database Performance Optimization",
+      description: "Implement connection pooling, indexes, and partitioning for scale",
+      status: "todo",
+      category: "Backend",
+      estimatedHours: 8,
+      dependencies: ["database-schema"]
+    },
+
+    // AI Agent System
+    {
+      id: "n8n-integration",
+      title: "Containerized n8n Workflow System",
+      description: "Set up containerized n8n instances with dynamic deployment and credential injection",
+      status: "critical",
+      category: "AI Agents",
+      estimatedHours: 24,
+      dependencies: ["container-orchestration", "credential-vault"],
+      resources: [
+        { name: "n8n Documentation", url: "https://docs.n8n.io/" }
+      ]
+    },
+    {
+      id: "agent-templates",
+      title: "Pre-built Agent Template System",
+      description: "Create library of pre-built agent workflows with secure deployment",
+      status: "todo",
+      category: "AI Agents",
+      estimatedHours: 16,
+      dependencies: ["n8n-integration"]
+    },
+    {
+      id: "agent-deployment",
+      title: "Automated Agent Deployment Pipeline",
+      description: "Build system for one-click agent deployment to dedicated user containers",
+      status: "todo",
+      category: "AI Agents",
+      estimatedHours: 14,
+      dependencies: ["agent-templates", "workflow-deployment-pipeline"]
+    },
+
+    // External API Integrations
+    {
+      id: "meta-api-setup",
+      title: "Facebook/Meta API Integration",
+      description: "Centralized Meta Business API integration with credential management",
+      status: "critical",
+      category: "Integrations",
+      estimatedHours: 14,
+      dependencies: ["credential-vault"],
+      resources: [
+        { name: "Meta Business API", url: "https://developers.facebook.com/docs/marketing-api" }
+      ]
+    },
+    {
+      id: "twilio-integration",
+      title: "Twilio SMS/Voice Integration",
+      description: "Centralized Twilio integration for SMS and voice automation",
+      status: "critical",
+      category: "Integrations",
+      estimatedHours: 12,
+      dependencies: ["credential-vault"],
+      resources: [
+        { name: "Twilio API", url: "https://www.twilio.com/docs" }
+      ]
+    },
+    {
+      id: "lead-sync",
+      title: "Real-time Lead Synchronization",
+      description: "Real-time sync of leads from Meta to user-isolated containers",
+      status: "todo",
+      category: "Integrations",
+      estimatedHours: 10,
+      dependencies: ["meta-api-setup", "multi-tenant-isolation"]
+    },
+    {
+      id: "competitor-spy",
+      title: "Competitor Ad Spy Tool",
+      description: "Implement Meta Ad Library scraping with centralized API management",
+      status: "todo",
+      category: "Integrations",
+      estimatedHours: 12,
+      dependencies: ["meta-api-setup"]
+    },
+
+    // Payment System
+    {
+      id: "stripe-setup",
+      title: "Stripe Payment Integration",
+      description: "Configure Stripe for subscription billing with usage-based pricing",
+      status: "critical",
+      category: "Payments",
+      estimatedHours: 8,
+      resources: [
+        { name: "Stripe Docs", url: "https://stripe.com/docs" }
+      ]
+    },
+    {
+      id: "subscription-management",
+      title: "Multi-Tenant Subscription Management",
+      description: "Handle plan upgrades, downgrades, and tenant-specific billing",
+      status: "todo",
+      category: "Payments",
+      estimatedHours: 14,
+      dependencies: ["stripe-setup", "multi-tenant-isolation"]
+    },
+    {
+      id: "usage-tracking",
+      title: "Container-Based Usage Tracking",
+      description: "Track agent usage, resource consumption, and implement metered billing",
+      status: "todo",
+      category: "Payments",
+      estimatedHours: 12,
+      dependencies: ["stripe-setup", "container-orchestration"]
+    },
+
+    // Performance & Monitoring
+    {
+      id: "monitoring-setup",
+      title: "Infrastructure Monitoring",
+      description: "Set up comprehensive monitoring for containers, databases, and API performance",
+      status: "todo",
+      category: "DevOps",
+      estimatedHours: 10,
+      dependencies: ["container-orchestration"]
+    },
+    {
+      id: "alerting-system",
+      title: "Auto-Scaling Alerts & Triggers",
+      description: "Configure intelligent alerting and auto-scaling triggers",
+      status: "todo",
+      category: "DevOps",
+      estimatedHours: 8,
+      dependencies: ["monitoring-setup"]
+    },
+    {
+      id: "performance-optimization",
+      title: "Container Performance Optimization",
+      description: "Implement pre-warming, caching, and latency optimization",
+      status: "todo",
+      category: "DevOps",
+      estimatedHours: 12,
+      dependencies: ["container-orchestration"]
+    },
+
+    // Authentication & User Management (existing)
+    {
+      id: "auth-setup",
+      title: "Supabase Authentication Setup",
+      description: "Configure email/password auth, user tables, and RLS policies",
+      status: "critical",
+      category: "Authentication",
+      estimatedHours: 4,
+      resources: [
+        { name: "Supabase Auth Docs", url: "https://supabase.com/docs/guides/auth" }
+      ]
+    },
+    {
+      id: "auth-ui",
+      title: "Login/Signup UI Components",
+      description: "Create responsive auth forms with validation and error handling",
+      status: "todo",
+      category: "Authentication",
+      estimatedHours: 6,
+      dependencies: ["auth-setup"]
+    },
+    {
+      id: "user-onboarding",
+      title: "User Onboarding Flow",
+      description: "Complete the onboarding walkthrough with proper state management",
+      status: "in-progress",
+      category: "Authentication",
+      estimatedHours: 8,
+      dependencies: ["auth-ui"]
+    },
+
+    // Database & Backend (existing)
+    {
+      id: "database-schema",
       title: "Database Schema Design",
       description: "Create tables for users, agents, leads, subscriptions, and configurations",
       status: "critical",
@@ -82,7 +348,7 @@ const MVPChecklist = () => {
       dependencies: ["database-schema"]
     },
 
-    // AI Agent System
+    // AI Agent System (existing)
     {
       id: "n8n-integration",
       title: "n8n Workflow Integration",
@@ -113,7 +379,7 @@ const MVPChecklist = () => {
       dependencies: ["agent-templates", "api-functions"]
     },
 
-    // Meta/Facebook Integration
+    // Meta/Facebook Integration (existing)
     {
       id: "meta-api-setup",
       title: "Meta API Integration",
@@ -144,7 +410,7 @@ const MVPChecklist = () => {
       dependencies: ["meta-api-setup"]
     },
 
-    // Payment System
+    // Payment System (existing)
     {
       id: "stripe-setup",
       title: "Stripe Payment Integration",
@@ -175,7 +441,7 @@ const MVPChecklist = () => {
       dependencies: ["stripe-setup", "agent-deployment"]
     },
 
-    // Communication Services
+    // Communication Services (existing)
     {
       id: "sms-service",
       title: "SMS Service Integration",
@@ -205,7 +471,7 @@ const MVPChecklist = () => {
       estimatedHours: 8
     },
 
-    // UI/UX & Frontend
+    // UI/UX & Frontend (existing)
     {
       id: "landing-page",
       title: "Marketing Landing Page",
@@ -233,7 +499,7 @@ const MVPChecklist = () => {
       dependencies: ["dashboard-complete"]
     },
 
-    // Security & Compliance
+    // Security & Compliance (existing)
     {
       id: "security-audit",
       title: "Security Audit",
@@ -261,7 +527,7 @@ const MVPChecklist = () => {
       dependencies: ["api-functions"]
     },
 
-    // Testing & Quality Assurance
+    // Testing & Quality Assurance (existing)
     {
       id: "unit-tests",
       title: "Unit Testing",
@@ -290,7 +556,7 @@ const MVPChecklist = () => {
       dependencies: ["dashboard-complete", "agent-deployment"]
     },
 
-    // DevOps & Deployment
+    // DevOps & Deployment (existing)
     {
       id: "production-deployment",
       title: "Production Environment Setup",
@@ -318,7 +584,7 @@ const MVPChecklist = () => {
       dependencies: ["production-deployment"]
     },
 
-    // Business & Legal
+    // Business & Legal (existing)
     {
       id: "terms-privacy",
       title: "Terms of Service & Privacy Policy",
@@ -411,7 +677,7 @@ const MVPChecklist = () => {
       <div className="mb-8">
         <h1 className="text-4xl font-bold mb-4 text-gradient">MVP Production Checklist</h1>
         <p className="text-lg text-muted-foreground mb-6">
-          Complete roadmap to launch Agent-flow as a production-ready SaaS platform
+          Complete roadmap to launch Agent-flow as a scalable, multi-tenant SaaS platform
         </p>
         
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
@@ -433,7 +699,7 @@ const MVPChecklist = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-red-500">{criticalItems}</div>
-              <div className="text-xs text-muted-foreground">Must complete first</div>
+              <div className="text-xs text-muted-foreground">Infrastructure priority</div>
             </CardContent>
           </Card>
           
@@ -534,24 +800,24 @@ const MVPChecklist = () => {
       
       <Card className="mt-8 bg-gradient-to-r from-brand-500/10 to-blue-600/10 border-brand-500/20">
         <CardHeader>
-          <CardTitle className="text-xl">🚀 Ready to Launch?</CardTitle>
+          <CardTitle className="text-xl">🚀 Ready to Scale?</CardTitle>
           <CardDescription>
-            Once all critical items are complete and 80%+ of total items are done, you'll be ready for MVP launch!
+            Focus on Infrastructure and Backend first to build a scalable foundation for 1000+ users!
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
             <p className="text-sm">
-              <strong>Priority 1:</strong> Complete all {criticalItems} critical items first
+              <strong>Priority 1:</strong> Complete all {criticalItems} critical infrastructure items first
             </p>
             <p className="text-sm">
-              <strong>Priority 2:</strong> Focus on Authentication, Backend, and AI Agents categories
+              <strong>Priority 2:</strong> Build scalable backend with containerized n8n and credential management
             </p>
             <p className="text-sm">
-              <strong>Priority 3:</strong> Implement payments and core integrations
+              <strong>Priority 3:</strong> Implement multi-tenant security and auto-scaling
             </p>
             <p className="text-sm">
-              <strong>Final:</strong> Polish UI/UX, testing, and deployment
+              <strong>Final:</strong> Add monitoring, testing, and performance optimization
             </p>
           </div>
         </CardContent>
