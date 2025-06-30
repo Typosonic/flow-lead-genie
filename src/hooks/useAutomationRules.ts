@@ -34,13 +34,13 @@ export const useAutomationRules = () => {
       if (!user) throw new Error('User not authenticated')
 
       const { data, error } = await supabase
-        .from('automation_rules' as any)
+        .from('automation_rules')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
 
       if (error) throw error
-      return data as AutomationRule[]
+      return (data || []) as AutomationRule[]
     },
     enabled: !!user
   })
@@ -50,7 +50,7 @@ export const useAutomationRules = () => {
       if (!user) throw new Error('User not authenticated')
 
       const { data, error } = await supabase
-        .from('automation_rules' as any)
+        .from('automation_rules')
         .insert({
           user_id: user.id,
           ...ruleData
@@ -59,7 +59,7 @@ export const useAutomationRules = () => {
         .single()
 
       if (error) throw error
-      return data
+      return data as AutomationRule
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['automation-rules'] })
@@ -80,14 +80,14 @@ export const useAutomationRules = () => {
   const updateRule = useMutation({
     mutationFn: async ({ id, ...updates }: Partial<AutomationRule> & { id: string }) => {
       const { data, error } = await supabase
-        .from('automation_rules' as any)
+        .from('automation_rules')
         .update(updates)
         .eq('id', id)
         .select()
         .single()
 
       if (error) throw error
-      return data
+      return data as AutomationRule
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['automation-rules'] })
@@ -108,7 +108,7 @@ export const useAutomationRules = () => {
   const deleteRule = useMutation({
     mutationFn: async (ruleId: string) => {
       const { error } = await supabase
-        .from('automation_rules' as any)
+        .from('automation_rules')
         .delete()
         .eq('id', ruleId)
 
