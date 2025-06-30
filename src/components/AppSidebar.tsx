@@ -70,10 +70,11 @@ const items = [
 ]
 
 export function AppSidebar() {
-  const { collapsed } = useSidebar()
+  const { state } = useSidebar()
   const location = useLocation()
   const { user, loading } = useAuth()
   const currentPath = location.pathname
+  const isCollapsed = state === "collapsed"
 
   const isActive = (path: string) => currentPath === path
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
@@ -81,7 +82,7 @@ export function AppSidebar() {
 
   if (loading) {
     return (
-      <Sidebar className={collapsed ? "w-14" : "w-60"} collapsible>
+      <Sidebar className={isCollapsed ? "w-14" : "w-60"} collapsible="offcanvas">
         <SidebarContent>
           <div className="flex items-center justify-center p-4">
             <Loader2 className="h-6 w-6 animate-spin" />
@@ -92,17 +93,17 @@ export function AppSidebar() {
   }
 
   return (
-    <Sidebar className={collapsed ? "w-14" : "w-60"} collapsible>
+    <Sidebar className={isCollapsed ? "w-14" : "w-60"} collapsible="offcanvas">
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>
-            {!collapsed && (
+            {!isCollapsed && (
               <div className="flex items-center gap-2">
                 <Bot className="h-5 w-5 text-brand-500" />
                 <span className="font-bold text-brand-500">Agent-flow</span>
               </div>
             )}
-            {collapsed && <Bot className="h-5 w-5 text-brand-500" />}
+            {isCollapsed && <Bot className="h-5 w-5 text-brand-500" />}
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -111,7 +112,7 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild>
                     <NavLink to={item.url} className={getNavCls}>
                       <item.icon className="h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
+                      {!isCollapsed && <span>{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -124,12 +125,12 @@ export function AppSidebar() {
       {user && (
         <SidebarFooter>
           <div className="flex items-center justify-between p-2">
-            {!collapsed && (
+            {!isCollapsed && (
               <div className="flex items-center gap-2 flex-1">
                 <UserProfileDropdown />
               </div>
             )}
-            {collapsed && <UserProfileDropdown />}
+            {isCollapsed && <UserProfileDropdown />}
           </div>
         </SidebarFooter>
       )}
