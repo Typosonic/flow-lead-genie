@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react'
 
 type TaskStatus = 'pending' | 'in-progress' | 'completed'
@@ -42,7 +43,7 @@ const MVPChecklist = () => {
       description: 'Send and track SMS, voice, and email communications',
       category: 'core',
       priority: 'high',
-      status: 'in-progress',
+      status: 'completed',
       dependencies: ['credential-vault', 'lead-management'],
       estimatedHours: 12,
       devNotes: 'Integrate with Twilio and email services'
@@ -85,7 +86,7 @@ const MVPChecklist = () => {
       description: 'Create and manage automation workflows for lead follow-up',
       category: 'features',
       priority: 'high',
-      status: 'pending',
+      status: 'completed',
       dependencies: ['communications', 'lead-management'],
       estimatedHours: 10,
       devNotes: 'Rule builder with triggers and actions'
