@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -59,7 +60,7 @@ const Index = () => {
       
       <SidebarProvider>
         <div className="min-h-screen flex w-full">
-          <AppSidebar currentPage={currentPage} onNavigate={handleNavigation} />
+          <AppSidebar />
           <main className="flex-1 flex flex-col">
             <div className="border-b border-border/40 bg-background/50 backdrop-blur-xl p-4 flex items-center justify-between">
               <SidebarTrigger className="hover:bg-muted/20 transition-colors" />
