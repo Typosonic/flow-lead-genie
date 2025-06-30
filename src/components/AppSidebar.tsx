@@ -1,129 +1,148 @@
-import { Bot, Brain, Eye, HelpCircle, LayoutDashboard, Settings, Zap, CheckSquare, Wand2 } from "lucide-react";
+import * as React from "react"
+import { useState } from "react"
+import { useLocation, useNavigate } from "react-router-dom"
+import { useQuery } from "@tanstack/react-query"
+import { useAuth } from "@/contexts/AuthContext"
+import { cn } from "@/lib/utils"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Button } from "@/components/ui/button"
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-} from "@/components/ui/sidebar";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Separator } from "@/components/ui/separator"
+import { Sidebar, SidebarClose, SidebarContent, SidebarFooter, SidebarHeader, SidebarItem, SidebarNav } from "@/components/ui/sidebar"
+import { useSidebar } from "@/components/providers/sidebar-provider"
+import {
+  LayoutDashboard,
+  Bot,
+  Library,
+  Search,
+  Settings,
+  CheckSquare,
+  Container
+} from "lucide-react"
+import { supabase } from "@/integrations/supabase/client"
 
-const navigationItems = [
-  {
-    title: "Dashboard",
-    key: "dashboard",
-    icon: LayoutDashboard,
-  },
-  {
-    title: "Agent Library",
-    key: "agents",
-    icon: Bot,
-  },
-  {
-    title: "Agent Builder",
-    key: "builder",
-    icon: Wand2,
-  },
-  {
-    title: "Spy Tools",
-    key: "spy",
-    icon: Eye,
-  },
-  {
-    title: "MVP Checklist",
-    key: "checklist",
-    icon: CheckSquare,
-  },
-  {
-    title: "Settings",
-    key: "settings",
-    icon: Settings,
-  },
-  {
-    title: "Help",
-    key: "help",
-    icon: HelpCircle,
-  },
-];
+export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { pathname } = useLocation()
+  const navigate = useNavigate()
+  const { user } = useAuth()
+  const { isOpen, onOpen, onClose } = useSidebar()
+  const [isProfileOpen, setIsProfileOpen] = useState(false)
 
-interface AppSidebarProps {
-  currentPage?: string;
-  onNavigate?: (page: string) => void;
-}
+  const { data: userData, isLoading: isUserLoading } = useQuery({
+    queryKey: ["user-data", user?.id],
+    queryFn: async () => {
+      if (!user) return null
 
-export function AppSidebar({ currentPage = "dashboard", onNavigate }: AppSidebarProps) {
-  const handleNavigation = (pageKey: string) => {
-    if (onNavigate) {
-      onNavigate(pageKey);
-    }
-  };
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single()
+
+      if (error) {
+        console.error("Error fetching user data:", error)
+        throw error
+      }
+
+      return data
+    },
+    enabled: !!user,
+  })
+
+  const menuItems = [
+    {
+      title: "Dashboard",
+      url: "/dashboard",
+      icon: LayoutDashboard,
+    },
+    {
+      title: "Agent Builder", 
+      url: "/agents",
+      icon: Bot,
+    },
+    {
+      title: "Agent Library",
+      url: "/library", 
+      icon: Library,
+    },
+    {
+      title: "Infrastructure",
+      url: "/infrastructure",
+      icon: Container,
+    },
+    {
+      title: "Spy Tools",
+      url: "/spy-tools",
+      icon: Search,
+    },
+    {
+      title: "Settings",
+      url: "/settings", 
+      icon: Settings,
+    },
+    {
+      title: "MVP Checklist",
+      url: "/mvp-checklist",
+      icon: CheckSquare,
+    },
+  ]
 
   return (
-    <Sidebar className="border-r border-border/40 bg-sidebar/50 backdrop-blur-xl">
-      <SidebarHeader className="border-b border-border/40 p-6">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-blue-600">
-            <Brain className="h-6 w-6 text-white" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-gradient">Agent-flow</h1>
-            <p className="text-xs text-muted-foreground">AI Automation</p>
-          </div>
-        </div>
-      </SidebarHeader>
-      
-      <SidebarContent className="px-4 py-6">
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-xs font-medium text-muted-foreground mb-2">
-            Main Navigation
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {navigationItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton 
-                    onClick={() => handleNavigation(item.key)}
-                    className={`w-full rounded-xl hover:bg-sidebar-accent transition-all duration-200 group cursor-pointer ${
-                      currentPage === item.key ? 'bg-sidebar-accent text-sidebar-accent-foreground' : ''
-                    }`}
-                  >
-                    <div className="flex items-center gap-3 px-3 py-3">
-                      <item.icon className={`h-5 w-5 transition-colors ${
-                        currentPage === item.key 
-                          ? 'text-brand-500' 
-                          : 'text-muted-foreground group-hover:text-brand-500'
-                      }`} />
-                      <span className="font-medium">{item.title}</span>
-                    </div>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-        
-        <SidebarGroup className="mt-8">
-          <SidebarGroupLabel className="text-xs font-medium text-muted-foreground mb-2">
-            Quick Actions
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <div className="space-y-2">
-              <button className="w-full rounded-xl bg-gradient-to-r from-brand-500 to-blue-600 px-4 py-3 text-sm font-medium text-white transition-all duration-200 hover:scale-[1.02] hover:shadow-lg">
-                <div className="flex items-center gap-2">
-                  <Zap className="h-4 w-4" />
-                  Deploy Agent
+    <Sidebar className="h-screen" open={isOpen} onOpenChange={onClose}>
+      <SidebarContent className="flex flex-col">
+        <SidebarHeader>
+          <Button variant="ghost" className="w-full justify-start pl-4">
+            Agent-flow
+          </Button>
+          <SidebarClose onClick={onClose} />
+        </SidebarHeader>
+        <Separator />
+        <ScrollArea>
+          <SidebarNav>
+            {menuItems.map((item) => (
+              <SidebarItem
+                key={item.title}
+                title={item.title}
+                icon={item.icon}
+                active={pathname === item.url}
+                onClick={() => {
+                  navigate(item.url)
+                  onClose()
+                }}
+              />
+            ))}
+          </SidebarNav>
+        </ScrollArea>
+        <Separator />
+        <SidebarFooter>
+          <DropdownMenu open={isProfileOpen} onOpenChange={setIsProfileOpen}>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="gap-2 justify-start px-4 w-full">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={userData?.avatar_url} />
+                  <AvatarFallback>{userData?.full_name?.charAt(0) || "U"}</AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col items-start">
+                  <span className="text-sm font-medium leading-none">{userData?.full_name || "User"}</span>
+                  <span className="text-xs text-muted-foreground">{userData?.email || "user@example.com"}</span>
                 </div>
-              </button>
-              <button className="w-full rounded-xl border border-border/40 px-4 py-3 text-sm font-medium transition-all duration-200 hover:bg-sidebar-accent">
-                View Analytics
-              </button>
-            </div>
-          </SidebarGroupContent>
-        </SidebarGroup>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => navigate("/settings")}>Settings</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => supabase.auth.signOut()}>Log out</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </SidebarFooter>
       </SidebarContent>
     </Sidebar>
-  );
+  )
 }

@@ -11,6 +11,7 @@ interface WorkflowDeployRequest {
   templateId: string
   agentName: string
   configuration?: Record<string, any>
+  credentials?: Record<string, string>
 }
 
 serve(async (req) => {
@@ -38,7 +39,7 @@ serve(async (req) => {
       throw new Error('Invalid authentication')
     }
 
-    const { templateId, agentName, configuration }: WorkflowDeployRequest = await req.json()
+    const { templateId, agentName, configuration, credentials }: WorkflowDeployRequest = await req.json()
 
     console.log(`Deploying workflow template ${templateId} for user ${user.id}`)
 
@@ -53,7 +54,7 @@ serve(async (req) => {
       throw new Error(`Template not found: ${templateError.message}`)
     }
 
-    // Check if user has a container
+    // Check if user has a container, if not deploy one
     let { data: container, error: containerError } = await supabase
       .from('user_containers')
       .select('*')
@@ -61,22 +62,40 @@ serve(async (req) => {
       .single()
 
     if (containerError) {
-      // Create container if it doesn't exist
-      const { data: newContainer, error: createError } = await supabase
+      // Deploy container first via container-manager
+      const { data: deployResult } = await supabase.functions.invoke('container-manager', {
+        body: {
+          action: 'deploy',
+          workflowId: `template_${templateId}`,
+          credentials
+        }
+      })
+
+      // Get the newly created container
+      const { data: newContainer } = await supabase
         .from('user_containers')
-        .insert({
-          user_id: user.id,
-          container_id: `n8n-${user.id}-${Date.now()}`,
-          status: 'provisioning',
-          region: 'us-central1'
-        })
-        .select()
+        .select('*')
+        .eq('user_id', user.id)
         .single()
 
-      if (createError) {
-        throw new Error(`Failed to create container: ${createError.message}`)
-      }
       container = newContainer
+    }
+
+    if (!container) {
+      throw new Error('Failed to create or retrieve container')
+    }
+
+    // Store credentials if provided
+    if (credentials) {
+      for (const [serviceName, credential] of Object.entries(credentials)) {
+        await supabase
+          .from('user_credentials')
+          .upsert({
+            user_id: user.id,
+            service_name: serviceName,
+            encrypted_credentials: JSON.stringify(credential), // In production, encrypt this properly
+          })
+      }
     }
 
     // Create agent record
@@ -103,12 +122,13 @@ serve(async (req) => {
       throw new Error(`Failed to create agent: ${agentError.message}`)
     }
 
-    // Deploy to container (simulate deployment)
+    // Deploy to container
     const deploymentResult = await deployToContainer(
       container.container_id,
       template,
       configuration,
-      user.id
+      user.id,
+      agent.id
     )
 
     // Update agent status
@@ -128,15 +148,31 @@ serve(async (req) => {
         agent_id: agent.id,
         template_id: templateId,
         container_id: container.container_id,
-        status: deploymentResult.success ? 'success' : 'failed',
+        status: deploymentResult.success ? 'completed' : 'failed',
         deployment_time: new Date().toISOString(),
         metadata: deploymentResult
+      })
+
+    // Log container event
+    await supabase
+      .from('container_events')
+      .insert({
+        user_id: user.id,
+        container_id: container.container_id,
+        event_type: 'workflow_deployed',
+        workflow_id: deploymentResult.workflowId,
+        metadata: {
+          agent_id: agent.id,
+          template_id: templateId,
+          deployment_success: deploymentResult.success
+        }
       })
 
     return new Response(
       JSON.stringify({
         success: true,
         agent,
+        container,
         deployment: deploymentResult
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -158,21 +194,16 @@ async function deployToContainer(
   containerId: string, 
   template: any, 
   configuration: any, 
-  userId: string
+  userId: string,
+  agentId: string
 ) {
-  // In production, this would:
-  // 1. Get user credentials from vault
-  // 2. Generate n8n workflow JSON with injected credentials
-  // 3. Deploy to dedicated container via Cloud Run API
-  // 4. Configure webhooks and triggers
+  const workflowId = `wf_${agentId}_${Date.now()}`
   
-  const workflowId = `wf_${Date.now()}`
-  
-  // Simulate deployment process
   console.log(`Deploying to container ${containerId}:`, {
     template: template.name,
     configuration,
-    userId
+    userId,
+    agentId
   })
 
   // Simulate workflow creation in n8n
@@ -188,6 +219,7 @@ async function deployToContainer(
     meta: {
       templateId: template.id,
       userId: userId,
+      agentId: agentId,
       deployedAt: new Date().toISOString()
     }
   }
