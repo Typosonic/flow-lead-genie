@@ -75,6 +75,11 @@ const ContainerStatus = () => {
     )
   }
 
+  // Parse resources safely
+  const resources = container.resources && typeof container.resources === 'object' 
+    ? container.resources as { cpu?: string; memory?: string }
+    : null
+
   return (
     <Card>
       <CardHeader>
@@ -121,15 +126,15 @@ const ContainerStatus = () => {
               }
             </p>
           </div>
-          {container.resources && (
+          {resources && (
             <>
               <div>
                 <p className="text-sm font-medium">CPU</p>
-                <p className="text-sm text-muted-foreground">{container.resources.cpu}</p>
+                <p className="text-sm text-muted-foreground">{resources.cpu || 'N/A'}</p>
               </div>
               <div>
                 <p className="text-sm font-medium">Memory</p>
-                <p className="text-sm text-muted-foreground">{container.resources.memory}</p>
+                <p className="text-sm text-muted-foreground">{resources.memory || 'N/A'}</p>
               </div>
             </>
           )}

@@ -51,15 +51,15 @@ export const useLeadStats = () => {
       ])
 
       const callsPlaced = totalCommunications.filter(c => c.type === 'voice').length
-      const bookings = totalCommunications.filter(c => c.type === 'calendar').length
+      const emailsSent = totalCommunications.filter(c => c.type === 'email').length
       const responseRate = totalCommunications.length > 0 
-        ? Math.round((bookings / totalCommunications.length) * 100)
+        ? Math.round((emailsSent / totalCommunications.length) * 100)
         : 0
 
       return {
         leadsToday,
         callsPlaced,
-        bookings,
+        bookings: emailsSent, // Using emails as a proxy for bookings since calendar type doesn't exist
         responseRate
       }
     },
