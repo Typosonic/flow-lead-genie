@@ -36,20 +36,20 @@ function App() {
             <div className="flex h-screen bg-background">
               <Routes>
                 <Route path="/auth" element={<Auth />} />
-                <Route path="/" element={
+                <Route path="/*" element={
                   <ProtectedRoute>
                     <SidebarProvider>
                       <AppSidebar />
                       <SidebarInset>
                         <Routes>
-                          <Route index element={<Dashboard />} />
-                          <Route path="dashboard" element={<Dashboard />} />
-                          <Route path="agents" element={<AgentBuilder />} />
-                          <Route path="library" element={<AgentLibrary />} />
-                          <Route path="spy-tools" element={<SpyTools />} />
-                          <Route path="infrastructure" element={<Infrastructure />} />
-                          <Route path="settings" element={<Settings />} />
-                          <Route path="mvp-checklist" element={<MVPChecklist />} />
+                          <Route path="/" element={<Dashboard />} />
+                          <Route path="/dashboard" element={<Dashboard />} />
+                          <Route path="/agents" element={<AgentBuilder />} />
+                          <Route path="/library" element={<AgentLibrary />} />
+                          <Route path="/spy-tools" element={<SpyTools />} />
+                          <Route path="/infrastructure" element={<Infrastructure />} />
+                          <Route path="/settings" element={<Settings />} />
+                          <Route path="/mvp-checklist" element={<MVPChecklist />} />
                           <Route path="*" element={<NotFound />} />
                         </Routes>
                       </SidebarInset>
