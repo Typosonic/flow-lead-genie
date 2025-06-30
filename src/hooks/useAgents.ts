@@ -40,7 +40,7 @@ export const useCreateAgent = () => {
           user_id: user.id,
           name,
           description,
-          status: 'inactive',
+          status: 'draft',
           configuration: {}
         })
         .select()
