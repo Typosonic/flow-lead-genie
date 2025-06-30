@@ -1,5 +1,10 @@
 
 import React, { useState } from 'react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Progress } from "@/components/ui/progress"
+import { CheckCircle, Clock, Circle, AlertCircle } from "lucide-react"
 
 type TaskStatus = 'pending' | 'in-progress' | 'completed'
 
@@ -642,28 +647,58 @@ const MVPChecklist = () => {
     }
   ])
 
-  const getStatusColor = (status: TaskStatus) => {
+  const toggleTaskStatus = (taskId: string) => {
+    setTasks(tasks.map(task => {
+      if (task.id === taskId) {
+        const statusOrder: TaskStatus[] = ['pending', 'in-progress', 'completed']
+        const currentIndex = statusOrder.indexOf(task.status)
+        const nextIndex = (currentIndex + 1) % statusOrder.length
+        return { ...task, status: statusOrder[nextIndex] }
+      }
+      return task
+    }))
+  }
+
+  const getStatusIcon = (status: TaskStatus) => {
     switch (status) {
       case 'completed':
-        return 'bg-green-100 text-green-800'
+        return <CheckCircle className="h-4 w-4 text-green-600" />
       case 'in-progress':
-        return 'bg-yellow-100 text-yellow-800'
+        return <Clock className="h-4 w-4 text-yellow-600" />
       default:
-        return 'bg-gray-100 text-gray-800'
+        return <Circle className="h-4 w-4 text-gray-400" />
     }
   }
 
-  const getPriorityColor = (priority: string) => {
+  const getStatusVariant = (status: TaskStatus) => {
+    switch (status) {
+      case 'completed':
+        return 'default'
+      case 'in-progress':
+        return 'secondary'
+      default:
+        return 'outline'
+    }
+  }
+
+  const getPriorityVariant = (priority: string) => {
     switch (priority) {
       case 'critical':
-        return 'bg-red-100 text-red-800'
+        return 'destructive'
       case 'high':
-        return 'bg-orange-100 text-orange-800'
+        return 'secondary'
       case 'medium':
-        return 'bg-blue-100 text-blue-800'
+        return 'outline'
       default:
-        return 'bg-gray-100 text-gray-800'
+        return 'outline'
     }
+  }
+
+  const getPriorityIcon = (priority: string) => {
+    if (priority === 'critical') {
+      return <AlertCircle className="h-3 w-3" />
+    }
+    return null
   }
 
   const categoryStats = tasks.reduce((acc, task) => {
@@ -681,87 +716,138 @@ const MVPChecklist = () => {
   const completedTasks = tasks.filter(task => task.status === 'completed').length
   const overallProgress = Math.round((completedTasks / totalTasks) * 100)
 
-  return (
-    <div className="max-w-6xl mx-auto p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-4">MVP Development Checklist</h1>
-        <div className="bg-white rounded-lg border p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold">Overall Progress</h2>
-            <span className="text-2xl font-bold text-green-600">{overallProgress}%</span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-3 mb-4">
-            <div 
-              className="bg-green-600 h-3 rounded-full transition-all duration-300" 
-              style={{ width: `${overallProgress}%` }}
-            ></div>
-          </div>
-          <p className="text-gray-600">{completedTasks} of {totalTasks} tasks completed</p>
-        </div>
+  const categoryNames: Record<string, string> = {
+    auth: 'Authentication',
+    leads: 'Lead Management',
+    communications: 'Communications',
+    automation: 'Automation',
+    integrations: 'Integrations',
+    ui: 'UI/UX',
+    security: 'Security',
+    analytics: 'Analytics',
+    performance: 'Performance',
+    testing: 'Testing',
+    devops: 'DevOps',
+    documentation: 'Documentation'
+  }
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-          {Object.entries(categoryStats).map(([category, stats]) => (
-            <div key={category} className="bg-white rounded-lg border p-4">
-              <h3 className="font-semibold capitalize mb-2">{category}</h3>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">{stats.completed}/{stats.total}</span>
-                <span className="text-sm font-medium">
-                  {Math.round((stats.completed / stats.total) * 100)}%
-                </span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                <div 
-                  className="bg-blue-600 h-2 rounded-full" 
-                  style={{ width: `${(stats.completed / stats.total) * 100}%` }}
-                ></div>
-              </div>
-            </div>
-          ))}
-        </div>
+  return (
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold tracking-tight">MVP Development Checklist</h1>
+        <p className="text-muted-foreground">
+          Track progress across all development categories for the AI Lead Management Platform
+        </p>
       </div>
 
+      {/* Overall Progress Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            Overall Progress
+            <Badge variant="outline" className="text-lg font-bold">
+              {overallProgress}%
+            </Badge>
+          </CardTitle>
+          <CardDescription>
+            {completedTasks} of {totalTasks} tasks completed
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Progress value={overallProgress} className="h-3" />
+        </CardContent>
+      </Card>
+
+      {/* Category Progress Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {Object.entries(categoryStats).map(([category, stats]) => {
+          const progress = Math.round((stats.completed / stats.total) * 100)
+          return (
+            <Card key={category}>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium">
+                  {categoryNames[category] || category}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">
+                    {stats.completed}/{stats.total}
+                  </span>
+                  <span className="font-medium">{progress}%</span>
+                </div>
+                <Progress value={progress} className="h-2" />
+              </CardContent>
+            </Card>
+          )
+        })}
+      </div>
+
+      {/* Tasks List */}
       <div className="space-y-4">
-        {tasks.map(task => (
-          <div key={task.id} className="bg-white border rounded-lg p-4 hover:shadow-md transition-shadow">
-            <div className="flex justify-between items-start mb-3">
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold mb-1">{task.title}</h3>
-                <p className="text-gray-600 text-sm mb-2">{task.description}</p>
-              </div>
-              <div className="flex gap-2 ml-4">
-                <span className={`px-2 py-1 rounded text-xs font-medium ${getPriorityColor(task.priority)}`}>
-                  {task.priority}
-                </span>
-                <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(task.status)}`}>
-                  {task.status.replace('-', ' ')}
-                </span>
-              </div>
-            </div>
-            
-            <div className="flex flex-wrap gap-4 text-xs text-gray-500 mb-2">
-              <span className="bg-gray-100 px-2 py-1 rounded">
-                Category: {task.category}
-              </span>
-              {task.estimatedHours && (
-                <span className="bg-gray-100 px-2 py-1 rounded">
-                  Est: {task.estimatedHours}h
-                </span>
-              )}
-            </div>
+        <h2 className="text-2xl font-semibold">All Tasks</h2>
+        <div className="grid gap-4">
+          {tasks.map(task => (
+            <Card key={task.id} className="transition-all hover:shadow-md">
+              <CardContent className="p-6">
+                <div className="flex items-start justify-between space-x-4">
+                  <div className="flex-1 space-y-3">
+                    <div className="flex items-center space-x-3">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-auto p-1"
+                        onClick={() => toggleTaskStatus(task.id)}
+                      >
+                        {getStatusIcon(task.status)}
+                      </Button>
+                      <div className="flex-1">
+                        <h3 className="font-semibold leading-none mb-1">
+                          {task.title}
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          {task.description}
+                        </p>
+                      </div>
+                    </div>
 
-            {task.dependencies && task.dependencies.length > 0 && (
-              <div className="text-xs text-gray-500 mb-2">
-                <span className="font-medium">Depends on:</span> {task.dependencies.join(', ')}
-              </div>
-            )}
+                    <div className="flex flex-wrap gap-2">
+                      <Badge variant="outline" className="text-xs">
+                        {categoryNames[task.category] || task.category}
+                      </Badge>
+                      <Badge variant={getPriorityVariant(task.priority)} className="text-xs">
+                        <div className="flex items-center gap-1">
+                          {getPriorityIcon(task.priority)}
+                          {task.priority}
+                        </div>
+                      </Badge>
+                      <Badge variant={getStatusVariant(task.status)} className="text-xs">
+                        {task.status.replace('-', ' ')}
+                      </Badge>
+                      {task.estimatedHours && (
+                        <Badge variant="outline" className="text-xs">
+                          {task.estimatedHours}h
+                        </Badge>
+                      )}
+                    </div>
 
-            {task.devNotes && (
-              <div className="text-xs italic text-gray-500 bg-gray-50 p-2 rounded">
-                <span className="font-medium">Notes:</span> {task.devNotes}
-              </div>
-            )}
-          </div>
-        ))}
+                    {task.dependencies && task.dependencies.length > 0 && (
+                      <div className="text-xs text-muted-foreground">
+                        <span className="font-medium">Dependencies:</span> {task.dependencies.join(', ')}
+                      </div>
+                    )}
+
+                    {task.devNotes && (
+                      <div className="text-xs bg-muted/50 p-3 rounded-md">
+                        <span className="font-medium">Notes:</span> {task.devNotes}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     </div>
   )
